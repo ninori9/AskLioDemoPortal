@@ -1,0 +1,138 @@
+<div class="dialog-shell" *ngIf="form && !saving; else loadingTpl">
+    <!-- Header -->
+    <header class="dialog-header">
+      <div class="left">
+        <h2 class="title">{{ isEdit ? 'Review & Edit Request' : 'New Procurement Request' }}</h2>
+        <div class="meta">Fill in the details below. Line totals and the grand total are calculated automatically.</div>
+      </div>
+
+      <div class="right total-chip">
+        <span class="label">Total</span>
+        <span class="value">{{ formatAmount(grandTotalCents()) }}</span>
+        <button mat-icon-button class="close-btn" (click)="close()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <form class="dialog-content" [formGroup]="form">
+      <!-- Details -->
+      <section class="card details-card">
+        <div class="card-header">
+          <mat-icon class="card-icon">info</mat-icon>
+          <h3>Request Details</h3>
+        </div>
+
+        <div class="grid two-col">
+          <mat-form-field appearance="outline">
+            <mat-label>Title / Description</mat-label>
+            <input matInput formControlName="title" placeholder="e.g., Adobe Creative Cloud Subscription">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Vendor Name</mat-label>
+            <input matInput formControlName="vendorName" placeholder="e.g., Adobe Systems">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>VAT ID</mat-label>
+            <input matInput formControlName="vatNumber" placeholder="e.g., DE123456789">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Commodity Group</mat-label>
+            <mat-select formControlName="commodityGroupId">
+              <mat-option *ngFor="let cg of commodityGroups" [value]="cg.id">
+                {{ cg.category }} — {{ cg.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- Order lines -->
+      <section class="card lines-card">
+        <div class="card-header">
+          <mat-icon class="card-icon">view_list</mat-icon>
+          <h3>Order Lines</h3>
+          <span class="spacer"></span>
+          <button mat-stroked-button color="primary" type="button" (click)="addLine()">
+            <mat-icon>add</mat-icon>
+            Add Line
+          </button>
+        </div>
+
+        <div class="lines-table" formArrayName="orderLines">
+          <div class="lines-header">
+            <div>Description</div>
+            <div class="num">Unit Price</div>
+            <div class="num">Qty</div>
+            <div>Unit</div>
+            <div class="num">Line Total</div>
+            <div class="act"></div>
+          </div>
+
+          <div class="lines-row" *ngFor="let g of lineGroups.controls; let i = index" [formGroupName]="i">
+            <div>
+              <input matInput placeholder="e.g., Adobe Photoshop License" formControlName="description">
+            </div>
+
+            <!-- Unit Price -->
+            <div class="num">
+                <input
+                matInput
+                type="text"
+                inputmode="decimal"
+                placeholder="0,00"
+                formControlName="unitPrice">
+            </div>
+            
+            <!-- Quantity -->
+            <div class="num">
+                <input
+                matInput
+                type="text"
+                inputmode="numeric"
+                placeholder="1"
+                formControlName="quantity">
+            </div>
+
+            <div>
+              <input matInput placeholder="e.g., licenses" formControlName="unit">
+            </div>
+
+            <div class="num strong">
+              {{ formatAmount(lineTotalCents(i)) }}
+            </div>
+
+            <div class="act">
+              <button mat-icon-button type="button" (click)="removeLine(i)" aria-label="Remove line">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grand-total-row">
+          <span class="label">Grand Total</span>
+          <span class="value strong">{{ formatAmount(grandTotalCents()) }}</span>
+        </div>
+      </section>
+    </form>
+
+    <!-- Footer -->
+    <footer class="dialog-actions">
+      <div class="spacer"></div>
+      <button mat-button type="button" (click)="close()">Cancel</button>
+      <button mat-flat-button color="primary" (click)="save()" type="button" [disabled]="!form.valid || lineGroups.length === 0">
+        Save
+      </button>
+    </footer>
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="loading-wrap">
+      <mat-spinner diameter="44"></mat-spinner>
+    </div>
+  </ng-template>

@@ -1,0 +1,72 @@
+<div class="auth-bg-art">
+  <div class="center-wrap">
+    <mat-card class="auth-card">
+      <div class="card-header">
+        <span class="welcome">Welcome back to</span>
+        <img
+          src="assets/images/logo_askLio-white.svg"
+          alt="AskLio logo"
+          class="brand-logo"
+        />
+      </div>
+
+      <mat-card-content>
+        <form [formGroup]="loginForm" (ngSubmit)="onLoginSubmit()" class="login-form">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Username</mat-label>
+            <input
+              matInput
+              formControlName="emailUserName"
+              autocomplete="username"
+              [disabled]="loggingIn"
+            />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Password</mat-label>
+            <input
+              matInput
+              [type]="hidePassword ? 'password' : 'text'"
+              formControlName="password"
+              autocomplete="current-password"
+              [disabled]="loggingIn"
+            />
+            <button
+              mat-icon-button
+              type="button"
+              matSuffix
+              aria-label="Passwort anzeigen/ausblenden"
+              (click)="hidePassword = !hidePassword"
+              [disabled]="loggingIn"
+            >
+            <mat-icon>{{ hidePassword ? 'visibility' : 'visibility_off' }}</mat-icon>
+            </button>
+          </mat-form-field>
+
+          <!-- Button or loader -->
+          <ng-container *ngIf="!loggingIn; else loadingTpl">
+            <button
+              mat-raised-button
+              color="primary"
+              class="login-btn"
+              [disabled]="loginButtonDisabled"
+              type="submit"
+            >
+              Login
+            </button>
+          </ng-container>
+
+          <ng-template #loadingTpl>
+            <div class="dot-loader-wrapper">
+              <app-custom-dot-loader></app-custom-dot-loader>
+            </div>
+          </ng-template>
+
+          <div class="error" *ngIf="loginFailed">
+            Login details invalid. Please try again.
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

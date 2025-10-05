@@ -1,0 +1,33 @@
+<div class="container-80">
+    <header class="page-header">
+      <h1 class="page-title">My Requests</h1>
+      <p class="page-subtitle">
+        View your submitted procurement requests and their current status.
+      </p>
+    </header>
+  
+    <app-filter-chips
+      [options]="statusOptions"
+      [selected]="statusSelected"
+      [allowDeselect]="true"
+      (selectionChange)="onStatusChange($event)">
+    </app-filter-chips>
+  
+    <div style="height: 12px;"></div>
+  
+    <app-skeleton-table
+      *ngIf="loading"
+      [columns]="columns"
+      [rows]="rows.length > 0 ? rows.length : 12">
+    </app-skeleton-table>
+  
+    <app-asklio-table
+      *ngIf="!loading"
+      [isMainTable]="true"
+      [pageHeading]="'My Requests'"
+      [columns]="columns"
+      [dataSource]="rows"
+      [parentComponent]="this"
+      [trackBy]="trackById">
+    </app-asklio-table>
+  </div>

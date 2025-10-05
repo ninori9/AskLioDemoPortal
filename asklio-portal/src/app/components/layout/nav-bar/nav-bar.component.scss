@@ -1,0 +1,54 @@
+.app-toolbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  z-index: 1000;
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+
+  .logo-link img {
+    height: 44px;
+
+    @media (max-width: 600px) {
+      height: 32px;
+    }
+  }
+
+  .spacer {
+    flex: 1 1 auto;
+  }
+
+  .toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .logout-btn {
+    color: #fff; // white text
+    font-weight: 500;
+    text-transform: none; // keep normal casing
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+  .avatar-circle {
+    width: 40px !important;
+    height: 40px !important;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+.router-wrapper {
+  padding-top: 88px; // below fixed toolbar
+  padding: 88px 24px 24px;
+  background: var(--color-content-bg);
+  min-height: calc(100vh - 64px);
+}

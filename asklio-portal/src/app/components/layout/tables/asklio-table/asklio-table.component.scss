@@ -1,0 +1,303 @@
+.mat-mdc-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--color-surface);
+  overflow: hidden;
+  box-shadow: var(--shadow-1);
+  border: 1px solid var(--border-color);
+  border-radius: 8px 8px 0px 0px;
+  border-bottom: none;
+
+  /* Header */
+  .mat-mdc-header-row {
+    background: color-mix(in oklab, var(--color-bg-accent), white 6%);
+    z-index: 2;
+  }
+  .mat-mdc-header-cell {
+    padding: 8px 12px !important;
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-on-surface-dark);
+  }
+
+  /* Body rows */
+  .mat-mdc-row {
+    transition: background 0.2s ease;
+    cursor: pointer;
+
+    &:hover .mat-mdc-cell {
+      background: color-mix(in oklab, var(--color-primary), transparent 92%);
+    }
+
+    .mat-mdc-cell {
+      padding: 8px 12px !important;
+      font-size: 15px;
+      border-bottom: 1px solid var(--border-color);
+
+      &.primary {
+        font-weight: 600;
+      }
+    }
+
+    &:last-child .mat-mdc-cell {
+      border-bottom: none;
+    }
+  }
+
+  .mat-mdc-row:nth-child(even) {
+    background: color-mix(in oklab, var(--color-surface), white 2%);
+  }
+
+  // Vertical dividers
+  .mat-mdc-header-cell,
+  .mat-mdc-cell {
+    border-right: 1px solid var(--border-color);
+  }
+
+  .mat-mdc-header-cell:last-child,
+  .mat-mdc-cell:last-child {
+    border-right: none;
+  }
+
+  /* Narrow icon column */
+  .cdk-column-icon {
+    width: 56px;
+    text-align: center;
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+}
+
+.mat-mdc-paginator {
+  background: var(--color-surface);
+  border-radius: 0 0 8px 8px;
+  border: 1px solid var(--border-color);
+}
+
+.table-wrapper {
+  border-radius: 12px;
+  overflow-x: auto;
+  overflow-y: visible;
+
+  @media (max-width: 920px) {
+    display: none;
+  }
+}
+.mobile-only {
+  display: none;
+
+  @media (max-width: 920px) {
+    display: block;
+  }
+}
+
+.card-list {
+  display: none;
+
+  @media (max-width: 920px) {
+    display: block;
+  }
+
+  .data-card {
+    margin-bottom: 12px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow-1);
+    background: var(--color-surface);
+    transition: background 0.2s ease;
+    cursor: pointer;
+    border: 1px solid var(--border-color); 
+
+    &:nth-child(even) {
+      background: color-mix(in oklab, var(--color-surface), white 2%);
+    }
+
+    &:hover {
+      background: color-mix(in oklab, var(--color-primary), transparent 92%);
+    }
+
+    .card-content {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+    }
+
+    .card-data {
+      flex: 1;
+      padding: 12px 16px;
+
+      .card-row {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 8px;
+
+        .card-label {
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: color-mix(in oklab, var(--text-on-surface-dark), transparent 45%);
+          margin-bottom: 4px;
+        }
+        .card-value {
+          font-size: 0.9rem;
+          color: var(--text-on-surface-dark);
+          line-height: 1.2;
+        }
+      }
+    }
+
+    .card-actions {
+      display: flex;
+      flex-direction: column;
+      justify-content: center; // vertical centering
+      padding: 0 12px;
+      border-left: 1px solid color-mix(in oklab, var(--color-primary), white 35%);
+    }
+  }
+}
+
+::ng-deep .mat-sort-header-arrow {
+  color: var(--text-on-surface-dark) !important; /* AskLio accent */
+}
+
+/* Standard cell classes */
+.datetime {
+  font-family: 'Courier New', Courier, monospace;
+  font-weight: bold;
+  color: color-mix(in oklab, var(--text-on-surface-dark), transparent 45%);
+}
+
+.truncate-text {
+  display: -webkit-box;
+  display: box;
+  -webkit-line-clamp: 2;
+  -moz-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: normal;
+
+  /* Firefox fallback: approximate line clamping */
+  max-height: calc(1.2em * 2);
+  line-height: 1.2em;
+}
+
+.header-inner {
+  display: inline-block;
+}
+.header-inner > * {
+  vertical-align: middle;
+}
+
+.collapsed {
+  max-width: 80px;
+  min-width: 80px;
+}
+
+.grayed,
+.grayed * {
+  color: color-mix(in oklab, var(--text-on-surface-dark), transparent 55%) !important;
+  opacity: 0.9;
+}
+
+// No entries
+.empty-state-row {
+  width: 100%;
+  text-align: center;
+  background: color-mix(in oklab, var(--color-surface), white 6%);
+  border-bottom: none !important;
+
+  mat-icon {
+    height: 36px;
+    width: 36px;
+
+    @media (max-width: 920px) {
+      height: 28px;
+      width: 28px;
+    }
+  }
+}
+
+.empty-state-container {
+  padding: 36px 0 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: color-mix(in oklab, var(--text-on-surface-dark), transparent 40%);
+}
+
+.empty-message {
+  font-size: 1.1rem;
+  margin-top: 12px;
+  color: color-mix(in oklab, var(--text-on-surface-dark), transparent 35%);
+  font-weight: 500;
+
+  @media (max-width: 920px) {
+    font-size: 0.8rem;
+  }
+}
+
+::ng-deep .mat-mdc-button-touch-target {
+  pointer-events: none !important;
+}
+
+.scroll-heading {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-top: 8px;
+  padding-bottom: 6px;
+  background: linear-gradient(to bottom left, color-mix(in oklab, var(--color-content-bg), white 6%) 0%, var(--color-surface) 60%);
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--text-on-surface-dark);
+  line-height: 1.2;
+  letter-spacing: -0.2px;
+  pointer-events: auto;
+  box-shadow: none !important;
+  border: none !important;
+
+  .scroll-top-btn {
+    margin-left: 4px;
+  }
+}
+
+/* Fixed clone container */
+.sticky-table-clone .mat-mdc-table {
+  border-radius: 0 !important;
+}
+
+.sticky-table-clone {
+  position: fixed;
+  z-index: 15;
+  display: none; // Do not display by default
+  pointer-events: none; // Do not block any clicks
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+}
+
+.sticky-table-clone.show { display: block; }
+
+.sticky-table-clone .mat-mdc-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--border-color);
+  border-bottom: none;
+  box-shadow: none;
+}
+
+.sticky-table-clone th,
+.sticky-table-clone tr { pointer-events: none; }
+
+
+/* Paginator styling */
+::ng-deep .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled):not(.mat-mdc-option-multiple) {
+  background-color: color-mix(in oklab, var(--color-primary), white 35%) !important;
+}
+
+::ng-deep div.mat-mdc-select-panel {
+  background-color: var(--color-surface) !important;
+}

@@ -1,0 +1,41 @@
+@use '@angular/material' as mat;
+@use './tokens' as *;
+
+/* 1) Core once */
+@include mat.core();
+
+/* 2) Define an M2-style palette for your brand */
+$asklio-primary-palette: (
+  50:  #ececff,
+  100: #c5c6ff,
+  200: #a2a3ff,
+  300: #7c7eff,
+  400: #6265ff,
+  500: #4646F4, // <-- your main blue
+  600: #3f3fe6,
+  700: #3232cc,
+  800: #2727a6,
+  900: #1b1b80,
+  contrast: (
+    50:  #000, 100: #000, 200: #000, 300: #000, 400: #fff,
+    500: #fff, 600: #fff, 700: #fff, 800: #fff, 900: #fff
+  )
+);
+
+/* 3) Use ONLY the M2 helpers + M2 palettes */
+$primary   : mat.m2-define-palette($asklio-primary-palette, 500, 300, 700);
+$accent    : mat.m2-define-palette($asklio-primary-palette, 500, 300, 700);
+/* IMPORTANT: use the **M2** red palette, not mat.$red-palette (M3) */
+$warn      : mat.m2-define-palette(mat.$m2-red-palette);
+
+/* 4) Build a DARK theme with the M2 API */
+$asklio-dark: mat.m2-define-dark-theme((
+  color: (
+    primary: $primary,
+    accent:  $accent,
+    warn:    $warn
+  ),
+));
+
+/* 5) Apply component themes */
+@include mat.all-component-themes($asklio-dark);

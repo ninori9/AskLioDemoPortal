@@ -1,0 +1,14 @@
+<mat-toolbar class="app-toolbar">
+  <!-- logo -->
+  <a class="logo-link" routerLink="/" aria-label="AskLio home">
+    <img src="assets/images/logo_askLio-white.svg" alt="AskLio" />
+  </a>
+
+  <span class="spacer"></span>
+
+  <!-- right side -->
+  <div class="toolbar-actions" *ngIf="loggedIn">
+    <button mat-button class="logout-btn" (click)="onLogoutClick()">Logout</button>
+    <app-avatar class="avatar-circle" [size]="40" [value]="initials"></app-avatar>
+  </div>
+</mat-toolbar>

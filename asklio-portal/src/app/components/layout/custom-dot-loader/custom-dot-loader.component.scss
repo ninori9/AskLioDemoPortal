@@ -1,0 +1,27 @@
+.dot-loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.dot-loader {
+  width: 60px;
+  aspect-ratio: 4;
+  background: radial-gradient(circle closest-side, var(--color-primary) 90%, transparent) 0 /
+    calc(100% / 3) 100% space;
+  clip-path: inset(0 100% 0 0);
+  animation: dotAnim 1s steps(4) infinite;
+}
+
+@keyframes dotAnim {
+  to {
+    clip-path: inset(0 -34% 0 0);
+  }
+}
+
+@media screen and (max-width: 680px) {
+  .dot-loader {
+    width: 44px;
+    aspect-ratio: 4;
+  }
+}

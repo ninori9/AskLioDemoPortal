@@ -1,0 +1,144 @@
+:root {
+  --color-primary-light: color-mix(in oklab, var(--color-primary), white 35%);
+  --skeleton-base: color-mix(in oklab, var(--text-on-surface-dark), transparent 80%);
+  --skeleton-mid:  color-mix(in oklab, var(--text-on-surface-dark), transparent 65%);
+}
+
+/* ===== Desktop skeleton table (aligns with AskLio table) ===== */
+.skeleton-table {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-1);
+  border: 1px solid var(--border-color);
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+
+  @media (max-width: 768px) { display: none; }
+}
+
+/* Header row matches AskLio header bg and typography */
+.header-row {
+  display: table-row;
+  z-index: 2;
+
+  .skeleton-cell {
+    background: color-mix(in oklab, var(--color-bg-accent), white 6%);
+    height: 56px;
+    padding: 8px 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-on-surface-dark);
+    border-bottom: 1px solid var(--border-color);
+  }
+}
+
+/* Body rows */
+.skeleton-row { display: table-row; background: var(--color-surface); }
+.skeleton-row:nth-child(even) { background: color-mix(in oklab, var(--color-surface), white 2%); }
+
+.skeleton-cell {
+  display: table-cell;
+  padding: 18px 12px;
+  box-sizing: border-box;
+  border-right: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+
+  &:last-child { border-right: none; }
+}
+
+/* Shimmer blocks */
+.skeleton-block {
+  width: 60%;
+  height: 14px;
+  border-radius: 4px;
+  background: var(--skeleton-base);
+  will-change: background-position;
+
+  &.shimmer {
+    background: linear-gradient(
+      90deg,
+      var(--skeleton-base) 0%,
+      var(--skeleton-mid) 50%,
+      var(--skeleton-base) 100%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.2s linear infinite;
+  }
+}
+
+/* Make sure animation actually runs (unless prefers-reduced-motion) */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton-block.shimmer { animation: none; }
+}
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ===== Mobile card list (aligns with AskLio cards) ===== */
+.mobile-only { display: none; @media (max-width: 768px) { display: block; } }
+
+.card-list {
+  display: none;
+  @media (max-width: 768px) { display: block; }
+
+  .data-card {
+    margin-bottom: 12px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow-1);
+    background: var(--color-surface);
+    border: 1px solid var(--border-color);
+
+    .card-content { display: flex; flex-direction: row; }
+
+    .card-data {
+      flex: 1; padding: 12px 16px;
+
+      .card-row {
+        display: flex; flex-direction: column; margin-bottom: 8px;
+
+        .card-label {
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: color-mix(in oklab, var(--text-on-surface-dark), transparent 45%);
+          margin-bottom: 4px;
+          min-height: 1rem;
+        }
+        .card-value {
+          height: 16px; border-radius: 4px; background: var(--skeleton-base);
+
+          .skeleton-block { width: 100%; height: 100%; border-radius: 4px; }
+          .skeleton-block.shimmer {
+            background: linear-gradient(
+              90deg,
+              var(--skeleton-base) 0%,
+              var(--skeleton-mid) 50%,
+              var(--skeleton-base) 100%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 1.2s linear infinite;
+          }
+        }
+      }
+    }
+
+    .card-actions {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 0 12px;
+      border-left: 1px solid var(--color-primary-light);
+      background: color-mix(in oklab, var(--color-primary), transparent 92%);
+
+      .action-block {
+        width: 32px; height: 32px; border-radius: 6px; margin: 0 auto;
+        background: var(--skeleton-base);
+      }
+    }
+  }
+}

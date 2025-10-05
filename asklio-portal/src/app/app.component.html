@@ -1,0 +1,6 @@
+<app-nav-bar
+  [loggedIn]="(loggedIn$ | async) ?? false"
+></app-nav-bar>
+<div class="router-wrapper">
+  <router-outlet></router-outlet>
+</div>

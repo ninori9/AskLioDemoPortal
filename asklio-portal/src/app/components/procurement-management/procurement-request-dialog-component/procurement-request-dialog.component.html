@@ -1,0 +1,159 @@
+<div class="dialog-shell" *ngIf="!loading && request; else loadingTpl">
+    <!-- Sticky header -->
+    <header class="dialog-header">
+      <div class="left">
+        <h2 class="title">{{ request.title }}</h2>
+        <div class="meta">
+          <span class="mono">#{{ request.id }}</span>
+          <span class="dot">•</span>
+          <span>Created: {{ formatDate(request.createdAt) }}</span>
+        </div>
+      </div>
+      <div class="right">
+        <mat-chip-set class="status-chip">
+          <mat-chip [ngClass]="statusClass(form.value.status)">
+            {{ statusLabel(form.value.status!) }}
+          </mat-chip>
+        </mat-chip-set>
+        <button mat-icon-button class="close-btn" (click)="close()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="dialog-content">
+      <!-- Details -->
+      <section class="card details-card" *ngIf="request">
+        <div class="card-header">
+          <mat-icon class="card-icon">info</mat-icon>
+          <h3>Request Details</h3>
+        </div>
+        <div class="grid two-col">
+          <div class="kv">
+            <div class="k">Vendor</div>
+            <div class="v">{{ request.vendorName }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">VAT Number</div>
+            <div class="v mono">{{ request.vatNumber }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Requestor</div>
+            <div class="v">{{ request.requestorName }} — {{ request.requestorDepartment }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Total</div>
+            <div class="v strong">{{ formatAmount(request.totalCostsCent) }}</div>
+          </div>
+        </div>
+
+        <div style="height: 16px;"></div>
+
+        <div class="edit-row" [formGroup]="form">
+          <mat-form-field appearance="outline" floatLabel="always">
+            <mat-label>Status</mat-label>
+            <mat-select formControlName="status">
+              <mat-option *ngFor="let s of statusOptions" [value]="s">
+                {{ statusLabel(s) }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        
+          <mat-form-field appearance="outline" floatLabel="always">
+            <mat-label>Commodity Group</mat-label>
+            <mat-select formControlName="commodityGroupId">
+              <mat-option *ngFor="let cg of commodityGroups" [value]="cg.id">
+                {{ cg.category }} — {{ cg.name }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- Order lines -->
+      <section class="card lines-card" *ngIf="request">
+        <div class="card-header">
+          <mat-icon class="card-icon">view_list</mat-icon>
+          <h3>Order Lines</h3>
+        </div>
+
+        <div class="lines-table">
+          <div class="lines-header">
+            <div>Description</div>
+            <div class="num">Amount</div>
+            <div class="num">Unit</div>
+            <div class="num">Total</div>
+          </div>
+          <div class="lines-row" *ngFor="let ol of request.orderLines">
+            <div>{{ ol.description }}</div>
+            <div class="num">{{ ol.unitPriceCents / 100 | number:'1.0-0' }}</div>
+            <div class="num mono">{{ ol.unit }}</div>
+            <div class="num strong">{{ formatAmount(ol.totalPriceCents) }}</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Update history -->
+      <section class="card history-card" *ngIf="request">
+        <div class="card-header">
+          <mat-icon class="card-icon">history</mat-icon>
+          <h3>Update History</h3>
+        </div>
+
+        <ol class="timeline">
+          <li *ngFor="let u of request.updateHistory" class="timeline-item">
+            <div class="t-bullet"></div>
+            <div class="t-body">
+              <div class="t-time mono">
+                {{ formatDate(u.updatedAt) }}
+                <span class="by">by {{ u.updatedByName }}</span>
+              </div>
+              <div class="t-change">
+                <ng-container *ngIf="u.oldState || u.newStatus">
+                  <div class="row">
+                    <span class="label">Status</span>
+                    <span class="value">
+                      <span class="chip small" [ngClass]="statusClass(u.oldState)">
+                        {{ u.oldState ? statusLabel(u.oldState) : '—' }}
+                      </span>
+                      <mat-icon class="arrow">arrow_forward</mat-icon>
+                      <span class="chip small" [ngClass]="statusClass(u.newStatus)">
+                        {{ u.newStatus ? statusLabel(u.newStatus) : '—' }}
+                      </span>
+                    </span>
+                  </div>
+                </ng-container>
+
+                <ng-container *ngIf="u.oldCommodityGroup || u.newCommodityGroup">
+                  <div class="row">
+                    <span class="label">Commodity Group</span>
+                    <span class="value">
+                      <span class="mono">{{ u.oldCommodityGroup ? (u.oldCommodityGroup.category + ' — ' + u.oldCommodityGroup.name) : '—' }}</span>
+                      <mat-icon class="arrow">arrow_forward</mat-icon>
+                      <span class="mono">{{ u.newCommodityGroup ? (u.newCommodityGroup.category + ' — ' + u.newCommodityGroup.name) : '—' }}</span>
+                    </span>
+                  </div>
+                </ng-container>
+              </div>
+            </div>
+          </li>
+        </ol>
+      </section>
+    </div>
+
+    <!-- Actions (non-persistent for now) -->
+    <footer class="dialog-actions">
+      <div class="spacer"></div>
+      <button mat-button (click)="close()">Close</button>
+      <button mat-flat-button color="primary" [disabled]="!form.valid" (click)="save()">
+        Save
+      </button>
+    </footer>
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="loading-wrap">
+      <mat-spinner diameter="44"></mat-spinner>
+    </div>
+  </ng-template>

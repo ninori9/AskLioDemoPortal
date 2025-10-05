@@ -1,0 +1,12 @@
+<mat-chip-set class="filter-chips" aria-label="Filter options">
+    <mat-chip
+      *ngFor="let o of options; trackBy: trackByValue"
+      (click)="onSelect(o.value)"
+      [class.selected]="isSelected(o.value)"
+      clickable
+      [disableRipple]="false"
+    >
+      <mat-icon *ngIf="o.icon" class="chip-icon">{{ o.icon }}</mat-icon>
+      <span class="chip-label">{{ o.label }}</span>
+    </mat-chip>
+  </mat-chip-set>

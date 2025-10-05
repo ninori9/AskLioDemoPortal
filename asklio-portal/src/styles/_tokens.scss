@@ -1,0 +1,55 @@
+// --- Brand tokens (SCSS variables) ---
+$color-primary:        #4646F4; // main button color
+$color-bg:             #000000; // page background (dark)
+$color-bg-accent:      #01024F; // dark background accent
+$color-content-bg:     #E0E0E0; // light content background (cards/contrast areas)
+
+// neutrals & utility
+$white:                #ffffff;
+$neutral-100:          #f5f5f5;
+$neutral-200:          #e5e5e5;
+$neutral-800:          #1f1f1f;
+
+$text-on-bg:           #e6e6e6;
+$text-on-surface-dark: #f3f3f3;
+$text-on-light:        #0a0a0a;
+
+// spacing / radius / shadow
+$radius: 12px;
+$space-1: 4px;
+$space-2: 8px;
+$space-3: 12px;
+$space-4: 16px;
+$space-6: 24px;
+$shadow-1: 0 4px 16px rgba(0,0,0,0.25);
+
+// --- Export as CSS variables (runtime theming friendly) ---
+:root {
+  /* Core brand */
+  --color-primary: #{$color-primary};
+
+  /* Background / surfaces */
+  --color-bg: #{$color-bg};
+  --color-bg-accent: #{$color-bg-accent};
+  --color-surface: #{$neutral-800};
+  --color-content-bg: #{$color-content-bg};
+
+  /* Text colors */
+  --text-on-bg: #{$text-on-bg};
+  --text-on-surface-dark: #{$text-on-surface-dark};
+  --text-on-light: #{$text-on-light};
+
+  /* Borders */
+  --border-color: #2a2a2a;
+
+  /* Layout tokens */
+  --radius: #{$radius};
+  --space-1: #{$space-1};
+  --space-2: #{$space-2};
+  --space-3: #{$space-3};
+  --space-4: #{$space-4};
+  --space-6: #{$space-6};
+
+  /* Shadows */
+  --shadow-1: #{$shadow-1};
+}

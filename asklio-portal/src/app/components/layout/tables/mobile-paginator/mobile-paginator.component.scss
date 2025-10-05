@@ -1,0 +1,67 @@
+.mobile-paginator-root {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    background: #fff;
+    border-radius: 0 0 12px 12px;
+    margin: 8px 0 0 0;
+    padding: 16px 16px 8px 16px;
+    box-shadow: 0 2px 8px 0 rgba(40,20,80,0.06);
+  }
+  
+  .mobile-paginator-range {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    align-items: flex-end;
+    gap: 16px;
+  }
+  
+  .range-label {
+    font-size: 0.82em;
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+    color: #232323;
+    min-width: 70px;
+  }
+  
+  .page-size-label {
+    font-size: 0.78em;
+    color: #232323;
+    text-align: right;
+    font-weight: 400;
+    flex: 1;
+  }
+  
+  .mobile-paginator-actions {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+    gap: 4px;
+  
+    button[mat-icon-button] {
+      width: 32px;
+      height: 32px;
+      min-width: 32px;
+      min-height: 32px;
+      padding: 0;
+      margin: 0px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #444;
+      border-radius: 50%;
+      background: transparent;
+  
+      &:disabled {
+        color: #bdbdbd;
+        pointer-events: none;
+        opacity: 0.6;
+      }
+      mat-icon {
+        font-size: 24px;
+        vertical-align: middle;
+      }
+    }
+  }

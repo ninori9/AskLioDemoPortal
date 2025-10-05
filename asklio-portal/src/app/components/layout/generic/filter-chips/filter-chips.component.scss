@@ -1,0 +1,86 @@
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+/* Base chip look on dark surface */
+.filter-chips .mat-mdc-chip {
+  --mdc-chip-container-height: 36px;
+  --mdc-chip-label-text-color: var(--text-on-surface-dark);
+
+  background: color-mix(in oklab, var(--color-surface), white 4%);
+  color: var(--text-on-surface-dark);
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  transition: background .15s ease, border-color .15s ease, color .15s ease, box-shadow .15s ease;
+
+  .chip-icon { font-size: 18px; line-height: 18px; margin-right: 6px; }
+  .chip-label { font-weight: 600; letter-spacing: .01em; }
+
+  &:hover {
+    background: color-mix(in oklab, var(--color-surface), white 8%);
+    border-color: color-mix(in oklab, var(--border-color), var(--color-primary) 25%);
+    cursor: pointer !important;
+  }
+}
+
+/* Selected state = brand color */
+.filter-chips .mat-mdc-chip.selected,
+.filter-chips .mat-mdc-chip.mat-mdc-chip-selected {
+  background: var(--color-primary) !important;
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 2px 10px rgba(0,0,0,.25);
+}
+
+/* Focus ring contrast on dark UI */
+.filter-chips .mat-mdc-chip:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--color-primary), white 20%);
+  outline-offset: 2px;
+}
+
+.filter-chips .mat-mdc-chip .mat-mdc-chip-action,
+.filter-chips .mat-mdc-chip .mdc-evolution-chip__action,
+.filter-chips .mat-mdc-chip .mdc-evolution-chip__cell--primary {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+}
+
+/* Normalize icon + label metrics so they share the same vertical center */
+.filter-chips .mat-mdc-chip .chip-icon {
+  font-size: 18px;
+  height: 18px;
+  width: 18px;
+  line-height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.filter-chips .mat-mdc-chip .chip-label,
+.filter-chips .mat-mdc-chip .mdc-evolution-chip__text-label {
+  line-height: 18px;
+}
+
+/* Lock container height + pill shape (you already set height; add shape var too) */
+.filter-chips .mat-mdc-chip {
+  --mdc-chip-container-height: 36px;
+  --mdc-chip-container-shape-radius: 999px;
+}
+
+.filter-chips .mat-mdc-chip,
+.filter-chips .mat-mdc-chip .mat-mdc-chip-action,
+.filter-chips .mat-mdc-chip .mdc-evolution-chip__action {
+  cursor: pointer;
+}
+
+.filter-chips .mat-mdc-chip:hover {
+  cursor: pointer;
+  background: color-mix(in oklab, var(--color-surface), white 10%);
+  border-color: color-mix(in oklab, var(--border-color), var(--color-primary) 35%);
+}

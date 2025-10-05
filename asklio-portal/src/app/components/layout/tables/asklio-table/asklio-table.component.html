@@ -1,0 +1,204 @@
+<!-- ───────── Clone Table Header to create a sticky header effect ───────── -->
+<div
+  #cloneHost
+  class="sticky-table-clone"
+  *ngIf="isMainTable && enableStickyClone"
+  [class.show]="showStickyClone"
+  [style.top.px]="topbarHeight"
+  [style.left.px]="cloneLeft"
+  [style.width.px]="cloneWidth"
+>
+  <div *ngIf="pageHeading" class="scroll-heading">
+    <button mat-icon-button type="button" class="scroll-top-btn" (click)="scrollToTableTop()" aria-label="Nach oben">
+      <mat-icon>keyboard_double_arrow_up</mat-icon>
+    </button>
+    <span>{{ pageHeading }}</span>
+  </div>
+  <table mat-table [dataSource]="matDataSource" class="mat-elevation-z1">
+    <ng-container *ngFor="let col of columns" [matColumnDef]="col.key">
+      <!-- Header -->
+      <th
+        mat-header-cell
+        *matHeaderCellDef
+        [style.width]="col.width"
+        [class.primary]="col.primary"
+      >
+        {{ col.header }}
+      </th>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  </table>
+</div>
+
+<div class="table-wrapper">
+  <!-- ───────── Desktop Table ───────── -->
+  <table
+    #baseTable
+    mat-table
+    [dataSource]="matDataSource"
+    [trackBy]="trackBy"
+    matSort
+    class="mat-elevation-z1"
+    (matSortChange)="onSortChange($event)"
+  >
+    <ng-container *ngFor="let col of columns" [matColumnDef]="col.key">
+      <!-- Header -->
+      <ng-container *ngIf="col.sortable; else plainHeader">
+        <th
+          mat-header-cell
+          *matHeaderCellDef
+          mat-sort-header
+          [style.width]="col.width"
+          [class.primary]="col.primary"
+        >
+          {{ col.header }}
+        </th>
+      </ng-container>
+      <ng-template #plainHeader>
+        <th
+          mat-header-cell
+          *matHeaderCellDef
+          [style.width]="col.width"
+          class="header-visibility"
+        >
+        {{ col.header }}
+        </th>
+      </ng-template>
+
+      <!-- Cell -->
+      <td
+        mat-cell
+        *matCellDef="let row"
+        [class.primary]="col.primary"
+        [ngClass]="col.cellClass"
+      >
+        <ng-container>
+          <ng-container
+            *ngIf="!col.cellComponent && cellValue(col, row); else noValue"
+          >
+            {{ cellValue(col, row) }}
+          </ng-container>
+          <ng-template #noValue>
+            <mat-icon
+              *ngIf="!col.cellComponent"
+              style="color: lightgray"
+              >remove</mat-icon
+            >
+          </ng-template>
+          <!-- Custom component -->
+          <ng-container *ngIf="col.cellComponent">
+            <ng-container
+              *ngComponentOutlet="
+                col.cellComponent;
+                injector: getCellInjector(row, parentComponent, col.key)
+              "
+            >
+            </ng-container>
+          </ng-container>
+        </ng-container> </td
+    ></ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr
+      mat-row
+      *matRowDef="let row; columns: displayedColumns"
+      [ngClass]="{ grayed: isDeleted(row) }"
+      (click)="onRowClick(row)"
+    ></tr>
+  </table>
+  <!-- Empty state row -->
+  <div *ngIf="dataSource.length === 0" class="empty-state-row">
+    <div class="empty-state-container">
+      <mat-icon
+        style="font-size: 36px; color: #ff772f"
+        >info</mat-icon
+      >
+      <div class="empty-message">Keine Einträge gefunden</div>
+    </div>
+  </div>
+
+  <!-- Mat-paginator -->
+  <mat-paginator [pageSize]="20" [pageSizeOptions]="[5, 10, 20, 50]" showFirstLastButtons class="paginator">
+  </mat-paginator>
+</div>
+
+<!-- ───────── Mobile Card List ───────── -->
+<div class="card-list mobile-only">
+  <ng-container
+    *ngFor="let row of mobilePagedData; let i = index; trackBy: trackBy"
+  >
+    <mat-card
+      class="data-card"
+      [ngClass]="{ grayed: isDeleted(row) }"
+      (click)="onRowClick(row)"
+    >
+      <div class="card-content">
+        <div class="card-data">
+          <ng-container *ngFor="let col of columns; let last = last">
+            <ng-container *ngIf="col.key !== 'actions'">
+              <div class="card-row">
+                <div class="card-label">{{ col.header }}</div>
+                <div class="card-value">
+                  <ng-container
+                    *ngIf="
+                      !col.cellComponent && cellValue(col, row);
+                      else noValue
+                    "
+                  >
+                    <div class="truncate-text">{{ cellValue(col, row) }}</div>
+                  </ng-container>
+                  <ng-template #noValue>
+                    <div
+                      *ngIf="!col.cellComponent"
+                      style="color: lightgray; height: 6px"
+                    >
+                    </div>
+                  </ng-template>
+                  <ng-container *ngIf="col.cellComponent">
+                    <ng-container
+                      *ngComponentOutlet="
+                        col.cellComponent;
+                        injector: getCellInjector(row, parentComponent, col.key)
+                      "
+                    >
+                    </ng-container>
+                  </ng-container>
+                </div>
+              </div>
+            </ng-container>
+          </ng-container>
+        </div>
+
+        <!-- Right: actions -->
+        <div class="card-actions">
+          <ng-container *ngFor="let col of columns">
+            <ng-container *ngIf="col.key === 'actions' && col.cellComponent">
+              <ng-container
+                *ngComponentOutlet="
+                  col.cellComponent;
+                  injector: getCellInjector(row, parentComponent, col.key)
+                "
+              >
+              </ng-container>
+            </ng-container>
+          </ng-container>
+        </div>
+      </div>
+    </mat-card>
+  </ng-container>
+  <ng-container *ngIf="mobilePagedData.length === 0">
+    <div class="empty-state-container">
+      <mat-icon style="color: #ff772f"
+        >info</mat-icon
+      >
+      <div class="empty-message">Keine Einträge gefunden</div>
+    </div>
+  </ng-container>
+  <app-mobile-paginator
+    [length]="dataSource.length"
+    [pageSize]="pageSize"
+    [pageIndex]="mobilePageIndex"
+    (page)="onMobilePage($event)">
+  </app-mobile-paginator>
+</div>

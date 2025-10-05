@@ -1,0 +1,262 @@
+/* ──────────────────────────────────────────────────────────
+   Dialog container & backdrop
+   ────────────────────────────────────────────────────────── */
+   :host ::ng-deep .mat-mdc-dialog-container .mdc-dialog__surface {
+    width: min(98vw, 1200px);
+    max-height: 96vh;
+    min-height: 70vh;
+    background: var(--color-surface);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    box-shadow: var(--shadow-1);
+  }
+  
+  :host ::ng-deep .cdk-overlay-backdrop {
+    background: rgba(0, 0, 0, 0.9) !important;
+  }
+  
+  /* Keep Material focused label readable on darker header */
+  .mat-mdc-form-field {
+    --mdc-outlined-text-field-focus-label-text-color: #fff;
+  }
+  
+  /* ──────────────────────────────────────────────────────────
+     Loading state
+     ────────────────────────────────────────────────────────── */
+  .loading-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+  }
+  
+  /* ──────────────────────────────────────────────────────────
+     Shell & header
+     ────────────────────────────────────────────────────────── */
+  .dialog-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+  
+  .dialog-header {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  
+    padding: 14px 18px;
+    background: color-mix(in oklab, var(--color-bg-accent), #000 35%);
+    border-bottom: 1px solid color-mix(in oklab, var(--border-color), #000 25%);
+  }
+  
+  .dialog-header .title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: -0.2px;
+  }
+  
+  .dialog-header .meta {
+    margin-top: 2px;
+    font-size: 0.9rem;
+    color: color-mix(in oklab, #fff, transparent 18%);
+  }
+  
+  .total-chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+  }
+  
+  .total-chip .label {
+    opacity: 0.9;
+  }
+  
+  .total-chip .value {
+    font-weight: 800;
+  }
+  
+  .close-btn {
+    border: 1px solid color-mix(in oklab, #fff, transparent 60%);
+    background: color-mix(in oklab, #000, transparent 65%);
+    color: #fff;
+  }
+  
+  /* ──────────────────────────────────────────────────────────
+     Content grid
+     ────────────────────────────────────────────────────────── */
+  .dialog-content {
+    padding: 18px;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: 1fr; /* details + full-width lines */
+    overflow: auto;
+  }
+  
+  /* ──────────────────────────────────────────────────────────
+     Cards
+     ────────────────────────────────────────────────────────── */
+  .card {
+    background: color-mix(in oklab, var(--color-surface), #fff 6%);
+    border: 1px solid color-mix(in oklab, var(--border-color), #000 10%);
+    border-radius: 12px;
+    box-shadow: var(--shadow-1);
+    padding: 14px;
+  }
+  
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    color: var(--text-on-surface-dark);
+  }
+  
+  .card-header h3 {
+    margin: 0;
+    font-weight: 800;
+    letter-spacing: -0.2px;
+  }
+  
+  .card-icon {
+    color: var(--color-primary);
+  }
+  
+  /* ──────────────────────────────────────────────────────────
+     Details grid
+     ────────────────────────────────────────────────────────── */
+  .grid.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  
+  @media (max-width: 860px) {
+    .grid.two-col {
+      grid-template-columns: 1fr;
+    }
+  }
+  
+  /* ──────────────────────────────────────────────────────────
+     Order lines table
+     ────────────────────────────────────────────────────────── */
+  .lines-card .lines-table {
+    border: 1px solid color-mix(in oklab, var(--border-color), #000 12%);
+    border-radius: 10px;
+    overflow: auto;
+    max-height: 36vh;
+  }
+  
+  .lines-header,
+  .lines-row {
+    display: grid;
+    grid-template-columns: 1fr 130px 90px 140px 150px 44px;
+    gap: 0;
+    /* Keep things aligned vertically in both header and rows */
+    align-items: center;
+  }
+  
+  .lines-header {
+    background: color-mix(in oklab, var(--color-bg-accent), white 6%);
+    color: var(--text-on-surface-dark);
+    font-weight: 800;
+  }
+  
+  .lines-header > div,
+  .lines-row > div {
+    padding: 10px 12px;
+    border-bottom: 1px solid color-mix(in oklab, var(--border-color), #000 10%);
+    display: flex;
+    align-items: center;  
+  }
+  
+  .lines-row {
+    background: color-mix(in oklab, var(--color-surface), #fff 3%);
+    color: var(--text-on-surface-dark);
+  }
+  
+  .lines-row:nth-child(even) {
+    background: color-mix(in oklab, var(--color-surface), #fff 6%);
+  }
+  
+  .lines-row:last-child > div {
+    border-bottom: none;
+  }
+  
+  .num {
+    text-align: right;
+  }
+  
+  .strong {
+    font-weight: 800;
+  }
+  
+  /* Inputs inside rows should be full width */
+  .lines-row input[matInput] {
+    width: 100%;
+  }
+  
+  /* Action column: center the icon button and align with inputs */
+  .lines-row .act {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-top: 0;
+    padding-bottom: 0;
+    text-align: center;
+  }
+  
+  /* Make the icon button height match input feel a bit better */
+  .lines-row .act .mat-mdc-icon-button {
+    padding: 0;
+    padding-top: 2px;
+  }
+  
+  /* ──────────────────────────────────────────────────────────
+     Grand total
+     ────────────────────────────────────────────────────────── */
+  .grand-total-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+    padding: 12px 8px 4px 8px;
+  }
+  
+  .grand-total-row .label {
+    color: color-mix(in oklab, var(--text-on-surface-dark), transparent 20%);
+  }
+  
+  .grand-total-row .value {
+    font-size: 1.05rem;
+    color: var(--text-on-surface-dark);
+  }
+  
+  /* ──────────────────────────────────────────────────────────
+     Footer
+     ────────────────────────────────────────────────────────── */
+  .dialog-actions {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 18px;
+    border-top: 1px solid color-mix(in oklab, var(--border-color), #000 15%);
+    background: color-mix(in oklab, var(--color-content-bg), #000 15%);
+  }
+  
+  .spacer {
+    flex: 1;
+  }
+  
+  /* Make Cancel readable on darker footer */
+  :host ::ng-deep .mat-mdc-button-base.mat-mdc-button {
+    color: #fff !important;
+  }

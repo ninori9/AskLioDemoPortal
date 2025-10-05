@@ -1,0 +1,86 @@
+.auth-bg-art {
+  min-height: calc(100vh - 64vh);
+
+  background:
+    linear-gradient(0deg, rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
+    url('../../../assets/images/background.svg') center/cover no-repeat;
+}
+
+/* Center the card nicely on all viewports */
+.center-wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  min-height: calc(100vh - 64px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 520px;
+  border-radius: var(--radius);
+  background: var(--color-bg);
+  color: var(--text-on-surface-dark);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-1);
+  padding: 20px 20px 24px;
+
+  @media (max-width: 600px) {
+    padding: 8px;
+    width: 96%;
+  }
+}
+
+.card-header {
+  display: grid;
+  place-items: center;
+  row-gap: 8px;
+  padding: 8px 8px 12px;
+  text-align: center;
+  margin-bottom: 24px;
+
+  .welcome {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-on-surface-dark);
+    letter-spacing: 0.01em;
+
+    @media (max-width: 768px) {
+      font-size: 1.2rem;
+    }
+  }
+
+  .brand-logo {
+    height: 36px;
+    width: auto;
+    display: block;
+    filter: drop-shadow(0 0 0 transparent);
+
+    @media (max-width: 768px) {
+      height: 32px;
+    }
+  }
+}
+
+.login-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 8px;
+
+  .full { width: 100%; }
+
+  .login-btn {
+    width: 100%;
+    margin-top: 8px;
+    color: #fff;
+  }
+}
+
+@media (max-width: 480px) {
+  .mat-mdc-form-field-infix { padding: 10px 0 !important; }
+}
+
+.auth-card .mat-mdc-form-field {
+  --mdc-outlined-text-field-focus-label-text-color: #fff;
+}

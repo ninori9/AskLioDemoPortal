@@ -1,0 +1,40 @@
+<div class="skeleton-table mat-elevation-z1">
+  <!-- header row -->
+  <div class="skeleton-row header-row">
+    <div *ngFor="let col of colsArray" class="skeleton-cell header">
+      {{ col.header ? col.header : '' }}
+    </div>
+  </div>
+
+  <!-- data rows -->
+  <div *ngFor="let _ of rowsArray" class="skeleton-row">
+    <div *ngFor="let _ of colsArray" class="skeleton-cell">
+      <div class="skeleton-block shimmer"></div>
+    </div>
+  </div>
+</div>
+
+<div class="card-list mobile-only">
+  <mat-card class="data-card" *ngFor="let _ of mobileSkeletonCount">
+    <div class="card-content">
+      <div class="card-data">
+        <div class="card-row" *ngFor="let col of columns">
+          <div
+            class="card-label shimmer-label"
+            *ngIf="col.header && col.header !== 'Aktionen'"
+            >{{ col.header }}</div
+          >
+          <div
+            class="card-value"
+            *ngIf="col.header && col.header !== 'Aktionen'"
+          >
+            <div class="skeleton-block shimmer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="card-actions">
+        <div class="skeleton-block shimmer action-block"></div>
+      </div>
+    </div>
+  </mat-card>
+</div>

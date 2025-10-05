@@ -1,0 +1,79 @@
+<div class="container-80">
+    <header class="page-header">
+      <h1 class="page-title">Submit a New Procurement Request</h1>
+      <p class="page-subtitle">
+        Create a request by uploading a vendor offer (auto-fill) or by entering details manually.
+      </p>
+    </header>
+  
+    <div style="height: 12px;"></div>
+  
+    <div class="action-grid">
+      <!-- Upload & Extract -->
+      <mat-card class="action-card upload-card">
+        <div class="card-header">
+          <mat-icon class="card-icon">picture_as_pdf</mat-icon>
+          <div class="card-title">Upload Offer (PDF)</div>
+        </div>
+        <div class="card-body">
+          <p class="card-desc">
+            Upload a vendor offer. The system extracts vendor details, line items, totals, and suggests a commodity group. You can review and adjust before submitting.
+          </p>
+  
+          <div class="file-row">
+            <input
+              #fileInput
+              type="file"
+              class="file-input"
+              accept=".pdf"
+              (change)="onFileSelected($event)"
+              aria-label="Select PDF offer"
+            />
+            <button mat-stroked-button type="button" (click)="fileInput.click()">
+              <mat-icon>upload_file</mat-icon>
+              Select PDF
+            </button>
+            <span class="file-name" *ngIf="selectedFileName">{{ selectedFileName }}</span>
+          </div>
+  
+          <button
+            class="process-btn"
+            mat-flat-button
+            color="primary"
+            type="button"
+            [disabled]="!selectedFile"
+            (click)="processUpload()"
+          >
+            <mat-icon>auto_awesome</mat-icon>
+            Extract & Review
+          </button>
+  
+          <div class="note">
+            PDF only. After extraction, data is shown for confirmation and edits before submission.
+          </div>
+        </div>
+      </mat-card>
+  
+      <!-- Manual Submission -->
+      <mat-card class="action-card manual-card">
+        <div class="card-header">
+          <mat-icon class="card-icon">edit_note</mat-icon>
+          <div class="card-title">Manual Entry</div>
+        </div>
+        <div class="card-body">
+          <p class="card-desc">
+            Enter request details in a guided form. Further sanity checks are performed on submit.
+          </p>
+  
+          <button mat-flat-button color="primary" type="button" (click)="startManual()">
+            <mat-icon>play_arrow</mat-icon>
+            Start Form
+          </button>
+  
+          <div class="note">
+            You can adjust the suggested commodity group in the form if needed.
+          </div>
+        </div>
+      </mat-card>
+    </div>
+  </div>

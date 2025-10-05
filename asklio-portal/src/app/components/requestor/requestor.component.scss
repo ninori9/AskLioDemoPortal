@@ -1,0 +1,74 @@
+  .action-grid {
+    margin-top: 12px;
+    display: grid;
+    gap: 16px;
+    grid-template-columns: repeat(2, minmax(280px, 520px));
+    justify-content: center;
+  }
+  @media (max-width: 920px) {
+    .action-grid {
+      grid-template-columns: minmax(280px, 720px);
+    }
+  }
+
+  .action-card {
+    background: var(--color-surface);
+    border: 1px solid var(--text-on-surface-dark);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-1);
+    overflow: hidden;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 16px;
+    background: color-mix(in oklab, var(--color-bg-accent), white 6%);
+    border-bottom: 1px solid var(--border-color);
+  }
+  .card-icon { color: var(--color-primary); }
+  .card-title {
+    font-weight: 800;
+    font-size: 1.05rem;
+    color: var(--text-on-surface-dark);
+    letter-spacing: -0.2px;
+  }
+
+  .card-body {
+    padding: 14px 16px 16px;
+  }
+  .card-desc {
+    margin: 0 0 12px 0;
+    color: var(--text-on-surface-dark);
+  }
+  .note {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: color-mix(in oklab, var(--text-on-surface-dark), transparent 20%);
+  }
+
+  /* Upload card specifics */
+  .file-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 10px;
+  }
+  .file-input {
+    /* Hide default input; trigger via button */
+    position: absolute;
+    width: 1px; height: 1px;
+    padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0,0,0,0);
+    border: 0;
+  }
+  .file-name {
+    font-size: 0.9rem;
+    color: color-mix(in oklab, var(--text-on-surface-dark), transparent 10%);
+  }
+  .process-btn mat-icon { margin-right: 6px; }
+
+  /* Manual card specifics */
+  .manual-card button mat-icon { margin-right: 6px; }

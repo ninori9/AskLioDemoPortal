@@ -1,0 +1,289 @@
+:host ::ng-deep .mat-mdc-dialog-container .mdc-dialog__surface {
+  width: min(98vw, 1400px);
+  max-height: 96vh;
+  min-height: 60vh;
+  background: var(--color-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  box-shadow: var(--shadow-1);
+}
+
+:host ::ng-deep .cdk-overlay-backdrop {
+  background: rgba(0, 0, 0, 0.9) !important;
+}
+
+.mat-mdc-form-field {
+  --mdc-outlined-text-field-focus-label-text-color: #fff;
+}
+
+.loading-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* Shell & scrolling */
+.dialog-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ---------- Sticky header ---------- */
+.dialog-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+
+  background: color-mix(in oklab, var(--color-bg-accent), #000 35%);
+  border-bottom: 1px solid color-mix(in oklab, var(--border-color), #000 25%);
+}
+
+.dialog-header .title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.2px;
+}
+.dialog-header .meta {
+  margin-top: 2px;
+  font-size: 0.9rem;
+  color: color-mix(in oklab, #fff, transparent 20%);
+}
+.dialog-header .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.dialog-header .dot { margin: 0 6px; }
+
+.dialog-header .right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.close-btn {
+  border: 1px solid color-mix(in oklab, #fff, transparent 60%);
+  background: color-mix(in oklab, #000, transparent 65%);
+  color: #fff;
+}
+
+/* Status chip – strong backgrounds for legibility */
+.status-chip .mat-mdc-chip {
+  --mdc-chip-container-height: 28px;
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 700;
+}
+.status-open       { background: #1b6fe0; }
+.status-inprogress { background: #e08a13; }
+.status-closed     { background: #23a664; }
+
+/* ---------- Content grid (wider columns) ---------- */
+.dialog-content {
+  padding: 18px;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 1.15fr 0.85fr; /* more horizontal use */
+  overflow: auto;
+}
+@media (max-width: 1160px) { .dialog-content { grid-template-columns: 1fr; } }
+
+/* Cards */
+.card {
+  background: color-mix(in oklab, var(--color-surface), #fff 6%);
+  border: 1px solid color-mix(in oklab, var(--border-color), #000 10%);
+  border-radius: 12px;
+  box-shadow: var(--shadow-1);
+  padding: 14px;
+}
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  color: var(--text-on-surface-dark);
+}
+.card-header h3 {
+  margin: 0;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+.card-icon { color: var(--color-primary); }
+
+/* Key/Value grid */
+.grid.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 720px) { .grid.two-col { grid-template-columns: 1fr; } }
+
+.kv .k {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: color-mix(in oklab, var(--text-on-surface-dark), transparent 8%);
+  margin-bottom: 4px;
+}
+.kv .v {
+  color: var(--text-on-surface-dark);
+}
+.kv .v.strong { font-weight: 800; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* Edit row */
+.edit-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
+.edit-row mat-form-field {
+  flex: 1;
+  min-width: 240px;
+}
+
+/* ---------- Update history ---------- */
+.history-card .timeline { list-style: none; margin: 0; padding: 0; }
+.timeline-item {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 10px;
+  padding: 10px 0;
+}
+.t-bullet {
+  width: 10px;
+  height: 10px;
+  margin-top: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary), transparent 75%);
+}
+.t-body {
+  border-bottom: 1px dashed color-mix(in oklab, var(--border-color), #000 10%);
+  padding-bottom: 8px;
+}
+.t-time {
+  font-size: 0.86rem;
+  color: color-mix(in oklab, var(--text-on-surface-dark), transparent 10%);
+  margin-bottom: 6px;
+}
+.t-time .by {
+  margin-left: 8px;
+  font-weight: 600;
+  color: color-mix(in oklab, var(--text-on-surface-dark), transparent 20%);
+}
+.t-change .row {
+  display: flex; gap: 12px; align-items: center; margin: 6px 0; flex-wrap: wrap;
+}
+.t-change .label {
+  min-width: 80px;
+  font-weight: 800;
+  color: color-mix(in oklab, var(--text-on-surface-dark), transparent 6%);
+}
+.t-change .value {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.t-change .value .mono {
+  color: var(--text-on-surface-dark);
+  font-size: 12px;
+}
+.arrow {
+  font-size: 18px;
+  color: color-mix(in oklab, var(--text-on-surface-dark), transparent 15%);
+}
+
+/* Mini chips used in history */
+.chip.small {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #fff;
+}
+.chip.small.status-open       { background: #1b6fe0; }
+.chip.small.status-inprogress { background: #e08a13; }
+.chip.small.status-closed     { background: #23a664; }
+
+/* ---------- Order lines ---------- */
+.lines-card .lines-table {
+  border: 1px solid color-mix(in oklab, var(--border-color), #000 12%);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.lines-header,
+.lines-row {
+  display: grid;
+  grid-template-columns: 1fr 120px 100px 140px;
+}
+
+.lines-header {
+  background: color-mix(in oklab, var(--color-bg-accent), white 6%);
+  color: var(--text-on-surface-dark);
+  font-weight: 800;
+}
+.lines-header > div,
+.lines-row > div {
+  padding: 10px 12px;
+  border-bottom: 1px solid color-mix(in oklab, var(--border-color), #000 10%);
+}
+
+.lines-row {
+  background: color-mix(in oklab, var(--color-surface), #fff 3%);
+  color: var(--text-on-surface-dark); /* ensure visible */
+}
+.lines-row:nth-child(even) {
+  background: color-mix(in oklab, var(--color-surface), #fff 6%);
+}
+.lines-row:last-child > div { border-bottom: none; }
+.num { text-align: right; }
+.strong { font-weight: 800; }
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.history-card { grid-column: 1 / -1; }
+
+/* ---------- Footer (buttons readable) ---------- */
+.dialog-actions {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 18px;
+  border-top: 1px solid color-mix(in oklab, var(--border-color), #000 15%);
+  background: color-mix(in oklab, var(--color-content-bg), #000 15%);
+}
+
+:host ::ng-deep .mat-mdc-stroked-button {
+  --mdc-outlined-button-outline-color: color-mix(in oklab, #fff, transparent 30%);
+  color: #fff !important;
+  background: color-mix(in oklab, #000, transparent 65%);
+  border-color: color-mix(in oklab, #fff, transparent 30%) !important;
+}
+
+:host ::ng-deep .mat-mdc-raised-button.mat-primary,
+:host ::ng-deep .mat-mdc-button-base.mat-primary {
+  color: #fff !important;
+}
+
+/* ---------- Form control contrast on dark cards ---------- */
+:host ::ng-deep .mat-mdc-form-field-appearance-outline .mdc-notched-outline__leading,
+:host ::ng-deep .mat-mdc-form-field-appearance-outline .mdc-notched-outline__notch,
+:host ::ng-deep .mat-mdc-form-field-appearance-outline .mdc-notched-outline__trailing {
+  border-color: color-mix(in oklab, var(--border-color), #000 15%) !important;
+}
+:host ::ng-deep .mat-mdc-select-value,
+:host ::ng-deep .mat-mdc-input-element {
+  color: var(--text-on-surface-dark) !important;
+}
+:host ::ng-deep .mat-mdc-form-field-label {
+  color: color-mix(in oklab, var(--text-on-surface-dark), transparent 12%) !important;
+}
