@@ -1,0 +1,23 @@
+.new-request-link {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    gap: 6px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: color-mix(in oklab, var(--color-primary), #000 25%);
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 0.2s ease;
+  }
+  
+  .new-request-link:hover {
+    background: color-mix(in oklab, var(--color-primary), #000 10%);
+  }
+  
+  .new-request-link mat-icon {
+    font-size: 20px;
+  }

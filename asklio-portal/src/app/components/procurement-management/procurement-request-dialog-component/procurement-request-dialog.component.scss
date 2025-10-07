@@ -147,6 +147,43 @@
   min-width: 240px;
 }
 
+.edit-row-annotation {
+  width: 100%;
+  display: flex;
+  justify-content: end;
+  align-items: center;
+}
+
+/* ---------- Price summary ---------- */
+.totals-card .totals-grid {
+  display: grid;
+  gap: 8px;
+
+  .row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    padding: 6px 8px;
+    border-radius: 8px;
+    background: color-mix(in oklab, var(--color-surface), #fff 4%);
+  }
+
+  .k { color: color-mix(in oklab, var(--text-on-surface-dark), transparent 20%); }
+  .v { color: var(--text-on-surface-dark); }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+  .strong { font-weight: 800; }
+
+  .sep {
+    height: 1px;
+    margin: 2px 0;
+    background: color-mix(in oklab, var(--border-color), #000 10%);
+  }
+
+  .total {
+    background: color-mix(in oklab, var(--color-bg-accent), #fff 12%);
+  }
+}
+
 /* ---------- Update history ---------- */
 .history-card .timeline { list-style: none; margin: 0; padding: 0; }
 .timeline-item {
@@ -217,6 +254,9 @@
   border-radius: 10px;
   overflow: hidden;
 }
+.lines-card {
+  grid-column: 1 / -1;
+}
 .lines-header,
 .lines-row {
   display: grid;
@@ -250,6 +290,34 @@
 }
 
 .history-card { grid-column: 1 / -1; }
+
+.cg-field { width: 100%; }
+
+.cg-helper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+  color: color-mix(in oklab, var(--text-on-surface-dark), transparent 10%);
+  font-size: 12px;
+}
+.cg-helper.muted { opacity: 0.8; }
+
+.pill {
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--border-color), #000 12%);
+  background: color-mix(in oklab, var(--color-surface), #fff 3%);
+  color: color-mix(in oklab, var(--text-on-surface-dark), transparent 6%);
+}
+
+.mini { font-size: 16px; width: 16px; height: 16px; }
+.warn { color: #f57c00; }      /* orange */
+.critical { color: #e53935; }  /* red */
+
+.note { opacity: 0.85; }
 
 /* ---------- Footer (buttons readable) ---------- */
 .dialog-actions {

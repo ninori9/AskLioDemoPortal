@@ -5,6 +5,7 @@ export interface ProcurementRequestLiteDto {
     id: string;
     title: string;
     commodityGroup: CommodityGroupDto;
+    commodityGroupConfidence?: number;
     vendorName: string;
     totalCostsCent: number;
     requestorName: string;

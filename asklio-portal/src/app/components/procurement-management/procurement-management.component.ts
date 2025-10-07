@@ -16,6 +16,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { ProcurementRequestDialogComponent } from './procurement-request-dialog-component/procurement-request-dialog.component';
 import { ErrorService } from '../../services/error/error.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { CommodityGroupCellComponent } from './commodity-group-cell/commodity-group-cell.component';
+import { MatIconModule } from '@angular/material/icon';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-procurement-management',
@@ -24,7 +27,9 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     CommonModule,
     FilterChipsComponent,
     AskLioTableComponent,
-    SkeletonTableComponent
+    SkeletonTableComponent,
+    MatIconModule,
+    RouterModule
   ],
   templateUrl: './procurement-management.component.html',
   styleUrl: './procurement-management.component.scss'
@@ -69,14 +74,32 @@ export class ProcurementManagementComponent {
     {
       key: 'commodityGroup',
       header: 'Commodity Group',
-      value: (item) => item.commodityGroup?.name ?? '—',
-      sortable: true
+      cellComponent: CommodityGroupCellComponent,
+      sortable: true,
+      sortFunction(a, b) {
+        const ca = a.commodityGroupConfidence;
+        const cb = b.commodityGroupConfidence;
+    
+        // 1) Put undefined at the bottom
+        const aU = (typeof ca !== 'number');
+        const bU = (typeof cb !== 'number');
+        if (aU && !bU) return 1;
+        if (!aU && bU) return -1;
+    
+        // 2) For defined values: lowest confidence first
+        if (!aU && !bU && ca !== cb) return ca - cb;
+    
+        // 3) Tie-breaker by group name (A→Z)
+        const an = a.commodityGroup?.name ?? '';
+        const bn = b.commodityGroup?.name ?? '';
+        return an.localeCompare(bn);
+      },
     },
     {
       key: 'vendorName',
       header: 'Vendor',
       value: (item) => item.vendorName,
-      sortable: true
+      sortable: true,
     },
     {
       key: 'totalCostsCent',

@@ -42,10 +42,6 @@
             <div class="k">Requestor</div>
             <div class="v">{{ request.requestorName }} — {{ request.requestorDepartment }}</div>
           </div>
-          <div class="kv">
-            <div class="k">Total</div>
-            <div class="v strong">{{ formatAmount(request.totalCostsCent) }}</div>
-          </div>
         </div>
 
         <div style="height: 16px;"></div>
@@ -60,7 +56,8 @@
             </mat-select>
           </mat-form-field>
         
-          <mat-form-field appearance="outline" floatLabel="always">
+          <!-- Commodity Group -->
+          <mat-form-field appearance="outline" floatLabel="always" class="cg-field">
             <mat-label>Commodity Group</mat-label>
             <mat-select formControlName="commodityGroupId">
               <mat-option *ngFor="let cg of commodityGroups" [value]="cg.id">
@@ -68,6 +65,69 @@
               </mat-option>
             </mat-select>
           </mat-form-field>
+        </div>
+        <div class="edit-row-annotation">
+          <!-- Helper row under the field (outside mat-form-field) -->
+          <div class="cg-helper" *ngIf="hasConfidence(); else managerSet">
+            <span class="pill">{{ confidencePct() }}</span>
+
+            <mat-icon
+              *ngIf="isCritical()"
+              class="mini critical"
+              matTooltip="No confidence — manager review required"
+              aria-label="No confidence — manager review required"
+            >error</mat-icon>
+
+            <mat-icon
+              *ngIf="isLow()"
+              class="mini warn"
+              matTooltip="Low confidence — please verify"
+              aria-label="Low confidence — please verify"
+            >warning</mat-icon>
+
+            <span class="note">Suggested by agent</span>
+          </div>
+
+          <ng-template #managerSet>
+            <div class="cg-helper muted">Set by manager</div>
+          </ng-template>
+        </div>
+      </section>
+
+      <!-- Pricing overview -->
+      <section class="card totals-card" *ngIf="request">
+        <div class="card-header">
+          <mat-icon class="card-icon">request_quote</mat-icon>
+          <h3>Pricing Summary</h3>
+        </div>
+      
+        <div class="totals-grid">
+          <div class="row">
+            <div class="k">Lines Subtotal</div>
+            <div class="v mono">{{ formatAmount(linesSubtotalCents()) }}</div>
+          </div>
+      
+          <div class="row">
+            <div class="k">Shipping</div>
+            <div class="v mono">{{ formatAmount(shippingCents()) }}</div>
+          </div>
+      
+          <div class="row">
+            <div class="k">Taxes</div>
+            <div class="v mono">{{ formatAmount(taxCents()) }}</div>
+          </div>
+      
+          <div class="row">
+            <div class="k">Total Discount</div>
+            <div class="v mono">− {{ formatAmount(discountCents()) }}</div>
+          </div>
+      
+          <div class="sep"></div>
+      
+          <div class="row total">
+            <div class="k">Final Total</div>
+            <div class="v strong">{{ formatAmount(finalTotalCents()) }}</div>
+          </div>
         </div>
       </section>
 

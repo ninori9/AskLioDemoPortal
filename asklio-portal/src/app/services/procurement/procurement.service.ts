@@ -9,6 +9,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { CreateProcurementRequestDto } from '../../data/dtos/create-procurement-request.dto';
 import { UpdateProcurementRequestDto } from '../../data/dtos/update-procurement-request.dto';
+import { RequestDraftDto } from '../../data/dtos/request-draft.dto';
 
 @Injectable({
   providedIn: 'root'
@@ -68,5 +69,14 @@ export class ProcurementService {
    */
   updateRequest(id: string, body: UpdateProcurementRequestDto): Observable<ProcurementRequestDto> {
     return this.http.patch<ProcurementRequestDto>(`${environment.apiUrl}/procurement/${id}`, body);
+  }
+
+  /**
+   * Extract data from a vendor offer PDF
+   */
+  extractDraftFromPdf(file: File): Observable<RequestDraftDto> {
+    const fd = new FormData();
+    fd.append('file', file, file.name);
+    return this.http.post<RequestDraftDto>(`${environment.apiUrl}/procurement/from-pdf`, fd);
   }
 }

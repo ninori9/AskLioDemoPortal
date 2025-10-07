@@ -28,6 +28,7 @@
     align-items: center;
     justify-content: center;
     min-height: 60vh;
+    min-width: 70vw;
   }
   
   /* ──────────────────────────────────────────────────────────
@@ -220,23 +221,63 @@
   }
   
   /* ──────────────────────────────────────────────────────────
-     Grand total
+     Grand total + Pricing
      ────────────────────────────────────────────────────────── */
-  .grand-total-row {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 12px;
-    padding: 12px 8px 4px 8px;
-  }
-  
-  .grand-total-row .label {
-    color: color-mix(in oklab, var(--text-on-surface-dark), transparent 20%);
-  }
-  
-  .grand-total-row .value {
-    font-size: 1.05rem;
-    color: var(--text-on-surface-dark);
+  .pricing-summary {
+    margin-top: 12px;
+    padding: 12px;
+    border: 1px dashed color-mix(in oklab, var(--border-color), #000 10%);
+    border-radius: 10px;
+    background: color-mix(in oklab, var(--color-surface), #fff 4%);
+
+    /* Make each child a proper cell with same height */
+    .row {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(180px, 1fr));
+      gap: 12px;
+      align-items: stretch; /* same height for all cells */
+    }
+
+    /* Make form fields fill their grid cell width and remove extra hint space */
+    .row .mat-mdc-form-field { width: 100%; }
+    .row .mat-mdc-form-field-subscript-wrapper { display: none; }
+
+    /* Computed total styled like a card, same height as inputs (56px + paddings) */
+    .computed-total {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;    /* vertically center text like inputs */
+      gap: 2px;
+      min-height: 56px;
+      padding: 8px 12px;
+      border-radius: 8px;
+
+      /* Higher contrast on dark backgrounds */
+      background: color-mix(in oklab, var(--color-bg-accent), #fff 18%);
+      color: #fff;
+
+      .label { font-size: 0.85rem; opacity: 0.9; }
+      .value { font-weight: 800; line-height: 1.2; }
+      .hint  { font-size: 0.85rem; opacity: 0.9; }
+    }
+
+    /* Banners unchanged except a tiny bump for readability */
+    .warn-banner,
+    .error-banner {
+      margin-top: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-weight: 700;
+    }
+    .warn-banner  { background: rgba(255,193,7,.14);  color: #ffd54f; }
+    .error-banner { background: rgba(229,57,53,.14);  color: #ff7961; }
+
+    @media (max-width: 860px) {
+      .row { grid-template-columns: 1fr; }
+    }
   }
   
   /* ──────────────────────────────────────────────────────────
@@ -260,3 +301,5 @@
   :host ::ng-deep .mat-mdc-button-base.mat-mdc-button {
     color: #fff !important;
   }
+
+

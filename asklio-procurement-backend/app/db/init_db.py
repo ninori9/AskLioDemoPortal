@@ -17,6 +17,9 @@ from app.models.procurement_request import ProcurementRequest
 from app.models.order_line import OrderLine
 from app.models.procurement_request_update import ProcurementRequestUpdate
 from app.models.enums import RequestStatus
+from app.weaviate.text_formatter import build_request_embedding_text
+from app.ai.client import get_ai_client
+import app.weaviate.operations as wx
 
 logger = logging.getLogger(__name__)
 
@@ -150,6 +153,9 @@ def _seed_requests(db: Session) -> int:
         status: RequestStatus,
         lines: list[dict],
         created_at: datetime,
+        shipping_cents: int = 0,
+        tax_cents: int = 0,
+        discount_cents: int = 0,
     ) -> ProcurementRequest:
         req_id = str(uuid4())
         line_rows: list[OrderLine] = []
@@ -170,13 +176,17 @@ def _seed_requests(db: Session) -> int:
                     requestID=req_id,  # set FK upfront to be explicit
                 )
             )
+        grand_total = total + int(shipping_cents) + int(tax_cents) - int(discount_cents)
         return ProcurementRequest(
             id=req_id,
             title=title,
             vendorName=vendor,
             vatID=vat,
             commodityGroupID=cg_id,
-            totalCosts=total,
+            totalCosts=grand_total,
+            shippingCents=shipping_cents or 0,
+            taxCents=tax_cents or 0,
+            discountCents=discount_cents or 0,
             status=status,
             createdByUserID=creator.id,
             order_lines=line_rows,
@@ -185,6 +195,7 @@ def _seed_requests(db: Session) -> int:
         )
 
     requests: list[ProcurementRequest] = [
+        # No shipping/tax/discount
         make_request(
             title="Adobe Creative Cloud Licenses 10 seats",
             vendor="Adobe Systems",
@@ -196,7 +207,12 @@ def _seed_requests(db: Session) -> int:
             lines=[
                 {"description": "Adobe All Apps license", "unitPriceCents": 4999, "quantity": 10, "unit": "licenses"},
             ],
+            shipping_cents=0,
+            tax_cents=0,
+            discount_cents=0,
         ),
+
+        # Shipping + tax (e.g., 29.90 shipping, VAT 19% over lines+shipping simplified as fixed number here)
         make_request(
             title="MacBook Pro 14 inch (2 units)",
             vendor="Apple",
@@ -209,7 +225,12 @@ def _seed_requests(db: Session) -> int:
                 {"description": "MacBook Pro 14'' M3, 16GB/512GB", "unitPriceCents": 199900, "quantity": 2, "unit": "units"},
                 {"description": "USB-C Docking Station", "unitPriceCents": 12999, "quantity": 2, "unit": "units"},
             ],
+            shipping_cents=2990,  # 29.90
+            tax_cents=80278,      # example VAT figure in cents
+            discount_cents=0,
         ),
+
+        # Discount only
         make_request(
             title="Website Launch Advertising Package",
             vendor="AdCo GmbH",
@@ -222,7 +243,12 @@ def _seed_requests(db: Session) -> int:
                 {"description": "Banner campaign (2 weeks)", "unitPriceCents": 350000, "quantity": 1, "unit": "package"},
                 {"description": "Sponsored posts (5)", "unitPriceCents": 45000, "quantity": 5, "unit": "posts"},
             ],
+            shipping_cents=0,
+            tax_cents=0,
+            discount_cents=25000,  # 250.00 discount
         ),
+
+        # Tax only
         make_request(
             title="Process Optimization Consulting",
             vendor="Lean Experts AG",
@@ -234,7 +260,12 @@ def _seed_requests(db: Session) -> int:
             lines=[
                 {"description": "Consulting day rate", "unitPriceCents": 120000, "quantity": 5, "unit": "days"},
             ],
+            shipping_cents=0,
+            tax_cents=114000,  # sample tax figure
+            discount_cents=0,
         ),
+
+        # Shipping + discount
         make_request(
             title="Office Renovation Phase 1",
             vendor="BuildWell GmbH",
@@ -247,15 +278,21 @@ def _seed_requests(db: Session) -> int:
                 {"description": "Painting (floor 3)", "unitPriceCents": 250000, "quantity": 1, "unit": "job"},
                 {"description": "Carpet replacement", "unitPriceCents": 180000, "quantity": 1, "unit": "job"},
             ],
+            shipping_cents=15000,
+            tax_cents=0,
+            discount_cents=20000,
         ),
     ]
 
     db.add_all(requests)
     db.flush()  # ensure IDs persisted for audit rows
+    
 
-    # Add two illustrative audit updates
+    # Add requests to Weaviate vector DB and add two illustrative audit update
     if requests:
-        # 1) Marketing request status moved to InProgress by Peter
+        _index_seed_requests_in_weaviate(requests)
+        
+        # Marketing request status moved to InProgress by Peter
         r1 = requests[0]
         db.add(
             ProcurementRequestUpdate(
@@ -272,26 +309,58 @@ def _seed_requests(db: Session) -> int:
         r1.status = RequestStatus.IN_PROGRESS
         r1.version = (r1.version or 1) + 1
 
-        # 2) Consulting request commodity group corrected by Peter
-        r2 = requests[3]
-        db.add(
-            ProcurementRequestUpdate(
-                id=str(uuid4()),
-                requestID=r2.id,
-                updatedByUserID=peter.id,
-                oldStatus=None,
-                newStatus=None,
-                oldCommodityGroupID=r2.commodityGroupID,
-                newCommodityGroupID=cg_consulting,
-                updated_at=now,
-            )
-        )
-        r2.commodityGroupID = cg_consulting
-        r2.version = (r2.version or 1) + 1
-
     logger.info("Inserted %d procurement requests (with lines + audit updates).", len(requests))
     return len(requests)
 
+
+def _index_seed_requests_in_weaviate(requests: list[ProcurementRequest]) -> int:
+    """
+    Try to embed and insert each seeded request into Weaviate.
+    Skips quietly if embeddings aren't available (e.g., no OPENAI_API_KEY).
+    Returns #successfully indexed.
+    """
+    try:
+        ai_client = get_ai_client()
+    except Exception as e:
+        logger.warning("AI client unavailable; skipping Weaviate indexing for seeds: %s", e)
+        return 0
+
+    inserted = 0
+    for r in requests:
+        # Build the same text your agent will build for queries
+        lines = [
+            f"{ol.quantity} x {ol.description} @ {ol.unitPriceCents/100:.2f} per {ol.unit}"
+            for ol in (r.order_lines or [])
+        ]
+        text = build_request_embedding_text(
+            title=r.title,
+            vendor_name=r.vendorName,
+            vat_id=r.vatID,
+            order_lines_text=lines,
+        )
+
+        try:
+            vec = ai_client.embed(text)
+        except Exception as e:
+            logger.warning("Embed failed for request %s; skipping: %s", r.id, e)
+            continue
+
+        try:
+            wx.add(
+                request_id=r.id,
+                commodity_group=str(r.commodityGroupID) if r.commodityGroupID is not None else "",
+                embedded_request_context=text,
+                vector=vec,
+            )
+            inserted += 1
+        except Exception as e:
+            logger.warning("Weaviate insert failed for request %s: %s", r.id, e)
+
+    if inserted:
+        logger.info("Indexed %d seeded requests into Weaviate.", inserted)
+    else:
+        logger.info("No seeded requests were indexed into Weaviate.")
+    return inserted
 
 
 def init_db(db: Session) -> None:

@@ -15,7 +15,7 @@
           <mat-icon class="card-icon">picture_as_pdf</mat-icon>
           <div class="card-title">Upload Offer (PDF)</div>
         </div>
-        <div class="card-body">
+        <div class="card-body" [class.is-processing]="isProcessing">
           <p class="card-desc">
             Upload a vendor offer. The system extracts vendor details, line items, totals, and suggests a commodity group. You can review and adjust before submitting.
           </p>
@@ -25,7 +25,7 @@
               #fileInput
               type="file"
               class="file-input"
-              accept=".pdf"
+              accept=".pdf,application/pdf"
               (change)="onFileSelected($event)"
               aria-label="Select PDF offer"
             />
@@ -41,7 +41,7 @@
             mat-flat-button
             color="primary"
             type="button"
-            [disabled]="!selectedFile"
+            [disabled]="!selectedFile || isProcessing"
             (click)="processUpload()"
           >
             <mat-icon>auto_awesome</mat-icon>
@@ -50,6 +50,12 @@
   
           <div class="note">
             PDF only. After extraction, data is shown for confirmation and edits before submission.
+          </div>
+
+          <!-- Busy overlay -->
+          <div class="overlay" *ngIf="isProcessing">
+            <mat-spinner diameter="44"></mat-spinner>
+            <div class="overlay-text">Processing PDF…</div>
           </div>
         </div>
       </mat-card>
@@ -60,7 +66,7 @@
           <mat-icon class="card-icon">edit_note</mat-icon>
           <div class="card-title">Manual Entry</div>
         </div>
-        <div class="card-body">
+        <div class="card-body" [class.is-processing]="isProcessing">
           <p class="card-desc">
             Enter request details in a guided form. Further sanity checks are performed on submit.
           </p>

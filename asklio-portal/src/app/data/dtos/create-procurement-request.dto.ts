@@ -4,6 +4,9 @@ export interface CreateProcurementRequestDto {
     title: string;
     vendorName: string;
     vatID: string;
-    commodityGroupID: number;
+    totalPriceCents?: number;
+    shippingCents?: number;
+    taxCents?: number;
+    totalDiscountCents?: number;
     orderLines: CreateOrderLineDto[];
   }

@@ -8,10 +8,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
-import { CommodityGroupDto } from '../../../data/dtos/commodity-group.dto';
 import { RequestDraftDto } from '../../../data/dtos/request-draft.dto';
 import { ProcurementRequestDto } from '../../../data/dtos/procurement-request.dto';
-import { formatEuro, numberWithCommaValidator, parseLocaleNumber, positiveIntegerValidator } from '../../../_utils/common';
+import { formatEuro, numberWithCommaValidator, numberWithCommaValidatorZero, parseLocaleNumber, positiveIntegerValidator } from '../../../_utils/common';
 import { CreateProcurementRequestDto } from '../../../data/dtos/create-procurement-request.dto';
 import { ProcurementService } from '../../../services/procurement/procurement.service';
 import { ErrorService } from '../../../services/error/error.service';
@@ -27,8 +26,10 @@ type RequestForm = FormGroup<{
   title:            FormControl<string>;
   vendorName:       FormControl<string>;
   vatNumber:        FormControl<string>;
-  commodityGroupId: FormControl<number | null>;
   orderLines:       FormArray<LineFG>;
+  shipping:         FormControl<string>;
+  tax:              FormControl<string>;
+  totalDiscount:    FormControl<string>;
 }>;
 
 @Component({
@@ -44,7 +45,7 @@ type RequestForm = FormGroup<{
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
   ],
   templateUrl: './new-procurement-request-dialog.component.html',
   styleUrl: './new-procurement-request-dialog.component.scss'
@@ -56,26 +57,26 @@ export class NewProcurementRequestDialogComponent {
   private procurementService = inject(ProcurementService);
   private errorService = inject(ErrorService);
 
+  extractedGrandTotalCents: number | null = null;
+
   constructor(
     @Inject(MAT_DIALOG_DATA)
     public data: {
-      commodityGroups: CommodityGroupDto[];
       initial?: RequestDraftDto | ProcurementRequestDto;
     }
   ) {}
 
-  commodityGroups: CommodityGroupDto[] = [];
   isEdit = false;
   saving = false;
 
   form!: RequestForm;
 
   ngOnInit(): void {
-    this.commodityGroups = this.data?.commodityGroups ?? [];
     this.initForm();
 
     const initial = this.data?.initial;
     if (initial) {
+      console.log("initial", initial);
       this.isEdit = true;
       this.patchInitial(initial);
     } else {
@@ -88,30 +89,40 @@ export class NewProcurementRequestDialogComponent {
 
   private initForm() {
     this.form = this.formBuilder.group({
-      title: this.formBuilder.nonNullable.control('', [Validators.required, Validators.maxLength(160)]),
-      vendorName: this.formBuilder.nonNullable.control('', [Validators.required, Validators.maxLength(120)]),
+      title: this.formBuilder.nonNullable.control('', [Validators.required, Validators.maxLength(200)]),
+      vendorName: this.formBuilder.nonNullable.control('', [Validators.required, Validators.maxLength(200)]),
       vatNumber: this.formBuilder.nonNullable.control('', [Validators.required, Validators.pattern(/^[A-Z]{2}[A-Z0-9]{8,12}$/i)]),
-      commodityGroupId: this.formBuilder.control<number | null>(null, { validators: [Validators.required] }),
-      orderLines: this.formBuilder.array<LineFG>([])
+      orderLines: this.formBuilder.array<LineFG>([]),
+
+      shipping:      this.formBuilder.nonNullable.control('', [numberWithCommaValidatorZero()]),
+      tax:           this.formBuilder.nonNullable.control('', [numberWithCommaValidatorZero()]),
+      totalDiscount: this.formBuilder.nonNullable.control('', [numberWithCommaValidatorZero()]),
     });
   }
 
   private patchInitial(initial: RequestDraftDto | ProcurementRequestDto) {
-    const commodityGroupId =
-      ('commodityGroup' in initial && initial.commodityGroup)
-        ? initial.commodityGroup.id
-        : (initial as RequestDraftDto).commodityGroupID ?? null;
-  
+    // Common fields
     this.form.patchValue({
-      title: ('title' in initial ? initial.title ?? '' : ''),
+      title:      ('title' in initial ? initial.title ?? '' : ''),
       vendorName: ('vendorName' in initial ? initial.vendorName ?? '' : ''),
-      vatNumber: ('vatNumber' in initial ? initial.vatNumber ?? '' : ''),
-      commodityGroupId
+      vatNumber:  ('vatNumber' in initial ? initial.vatNumber ?? '' : ''),
+
+      shipping: this.centsToLocaleString((initial as any).shippingCents),
+      tax: this.centsToLocaleString((initial as any).taxCents),
+      totalDiscount: this.centsToLocaleString((initial as any).totalDiscountCents),
     });
+
+    this.extractedGrandTotalCents =
+    typeof (initial as any).totalPriceCents === 'number'
+      ? (initial as any).totalPriceCents
+      : null;
   
-    const initialLines = ('orderLines' in initial && Array.isArray(initial.orderLines))
-      ? initial.orderLines
+    // Normalize line list
+    const initialLines = Array.isArray((initial as any).orderLines)
+      ? (initial as any).orderLines
       : [];
+  
+    this.lineGroups.clear();
   
     if (!initialLines.length) {
       this.addLine();
@@ -119,42 +130,68 @@ export class NewProcurementRequestDialogComponent {
     }
   
     for (const line of initialLines) {
+      // Support both draft (unitPriceCents) and potential other shapes (unitPrice, amountCents)
       const description = (line as any).description ?? '';
       const unit = (line as any).unit ?? 'pcs';
   
-      const unitPriceNumeric =
-        'unitPrice' in (line as any)
-          ? (line as any).unitPrice
-          : 'amountCents' in (line as any)
-            ? (line as any).amountCents / 100
-            : null;
+      // Prefer cents if present
+      let unitPriceCents: number | undefined =
+        typeof (line as any).unitPriceCents === 'number'
+          ? (line as any).unitPriceCents
+          : undefined;
   
-      const quantityNumeric = 'quantity' in (line as any) ? (line as any).quantity : 1;
+      if (unitPriceCents === undefined) {
+        // Fallback: "unitPrice" in euros -> convert to cents
+        if (typeof (line as any).unitPrice === 'number') {
+          unitPriceCents = Math.round((line as any).unitPrice * 100);
+        } else if (typeof (line as any).amountCents === 'number') {
+          unitPriceCents = (line as any).amountCents;
+        } else {
+          unitPriceCents = 0;
+        }
+      }
   
-      const unitPriceStr = unitPriceNumeric != null ? String(unitPriceNumeric) : '';
-      const quantityStr = quantityNumeric != null ? String(quantityNumeric) : '1';
+      // Quantity is not part of RequestDraftDto -> default to 1
+      const quantity = typeof (line as any).quantity === 'number'
+        ? (line as any).quantity
+        : 1;
   
       const lineForm: LineFG = this.formBuilder.group({
-        description: this.formBuilder.nonNullable.control(description, { validators: [Validators.required, Validators.maxLength(200)] }),
-        unitPrice: this.formBuilder.nonNullable.control(unitPriceStr, { validators: [Validators.required, numberWithCommaValidator()] }),
-        quantity: this.formBuilder.nonNullable.control(quantityStr, { validators: [Validators.required, positiveIntegerValidator()] }),
-        unit: this.formBuilder.nonNullable.control(unit, { validators: [Validators.required, Validators.maxLength(32)] })
+        description: this.formBuilder.nonNullable.control(
+          description,
+          { validators: [Validators.required, Validators.maxLength(200)] }
+        ),
+        // Dialog expects a *string* in euros with locale formatting
+        unitPrice: this.formBuilder.nonNullable.control(
+          this.centsToLocaleString(unitPriceCents),
+          { validators: [Validators.required, numberWithCommaValidator()] }
+        ),
+        quantity: this.formBuilder.nonNullable.control(
+          String(quantity),
+          { validators: [Validators.required, numberWithCommaValidator()] }
+        ),
+        unit: this.formBuilder.nonNullable.control(
+          unit,
+          { validators: [Validators.required, Validators.maxLength(50)] }
+        ),
       });
   
       this.lineGroups.push(lineForm);
     }
   }
   
+  // ----- Order lines -----
+
   get lineGroups(): FormArray<LineFG> {
     return this.form.controls.orderLines;
   }
   
   addLine() {
     const lineForm: LineFG = this.formBuilder.group({
-      description: this.formBuilder.nonNullable.control('', { validators: [Validators.required, Validators.maxLength(200)] }),
-      unitPrice: this.formBuilder.nonNullable.control('', { validators: [Validators.required, numberWithCommaValidator()] }),
-      quantity: this.formBuilder.nonNullable.control('1', { validators: [Validators.required, numberWithCommaValidator()] }),
-      unit: this.formBuilder.nonNullable.control('pcs', { validators: [Validators.required, Validators.maxLength(32)] })
+      description: this.formBuilder.nonNullable.control('', { validators: [Validators.required, Validators.maxLength(300)] }),
+      unitPrice:   this.formBuilder.nonNullable.control('', { validators: [Validators.required, numberWithCommaValidator()] }),
+      quantity:    this.formBuilder.nonNullable.control('1', { validators: [Validators.required, numberWithCommaValidator()] }),
+      unit:        this.formBuilder.nonNullable.control('pcs', { validators: [Validators.required, Validators.maxLength(50)] })
     });
   
     this.lineGroups.push(lineForm);
@@ -164,43 +201,79 @@ export class NewProcurementRequestDialogComponent {
     this.lineGroups.removeAt(index);
   }
   
+  // ----- Totals & Validation -----
+
+  private headerPartsCents() {
+    const shippingCents = this.toCents(this.form.controls.shipping.value);
+    const taxCents = this.toCents(this.form.controls.tax.value);
+    const discountCents = this.toCents(this.form.controls.totalDiscount.value);
+    return { shippingCents, taxCents, discountCents };
+  }
+
   lineTotalCents(lineIndex: number): number {
     const lineForm = this.lineGroups.at(lineIndex);
     const unitPriceCents = this.toCents(lineForm.controls.unitPrice.value);
-    const quantity = this.toPositiveInt(lineForm.controls.quantity.value);
+    const quantity = this.toPositiveNumber(lineForm.controls.quantity.value);
     if (quantity <= 0 || unitPriceCents <= 0) return 0;
     return unitPriceCents * quantity;
   }
-  
-  grandTotalCents(): number {
+
+  linesSubtotalCents(): number {
     let total = 0;
-    for (let lineIndex = 0; lineIndex < this.lineGroups.length; lineIndex++) {
-      total += this.lineTotalCents(lineIndex);
-    }
+    for (let i = 0; i < this.lineGroups.length; i++) total += this.lineTotalCents(i);
     return total;
   }
 
-  formatAmount = (cents: number) => formatEuro(cents);
+  expectedTotalCents(): number {
+    const { shippingCents, taxCents, discountCents } = this.headerPartsCents();
+    return this.linesSubtotalCents() + shippingCents + taxCents - discountCents;
+  }
+
+  readonly TOLERANCE_CENTS = 2; // +/- 0.02
+
+  hasMismatch(): boolean {
+    if (this.extractedGrandTotalCents == null) return false;
+    return Math.abs(this.expectedTotalCents() - this.extractedGrandTotalCents) > this.TOLERANCE_CENTS;
+  }
+
+  mismatchMessage(): string {
+    if (this.extractedGrandTotalCents == null) return '';
+    const expected = this.expectedTotalCents();
+    return `Attention: extracted total is ${this.formatAmount(this.extractedGrandTotalCents)}. Calculated total is ${this.formatAmount(expected)}. Please verify the extracted content.`;
+  }
+
+  computedTotalNegative(): boolean {
+    return this.expectedTotalCents() < 0; // hard stop
+  }
+
+
+  // ----- Close & Save -----
 
   close(): void {
     this.dialogRef.close();
   }
 
   save(): void {
-    if (this.form.invalid || this.lineGroups.length === 0) return;
+    if (this.form.invalid || this.lineGroups.length === 0) {
+      this.logInvalidControls();
+      return;
+    };
   
     this.saving = true;
     const raw = this.form.getRawValue();
+
+    const { shippingCents, taxCents, discountCents } = this.headerPartsCents();
   
     const payload: CreateProcurementRequestDto = {
       title: raw.title.trim(),
       vendorName: raw.vendorName.trim(),
       vatID: raw.vatNumber.trim(),
-      commodityGroupID: raw.commodityGroupId as number,
+      shippingCents: shippingCents > 0 ? shippingCents : undefined,
+      taxCents: taxCents > 0 ? taxCents : undefined,
+      totalDiscountCents: discountCents > 0 ? discountCents : undefined,
       orderLines: raw.orderLines.map(l => {
         const unitPriceCents = this.toCents(l.unitPrice);
-        const qtyRaw = parseLocaleNumber(l.quantity);
-        const quantity = this.toPositiveInt(l.quantity);;
+        const quantity = this.toPositiveNumber(l.quantity);;
         return {
           description: l.description.trim(),
           unitPriceCents,
@@ -222,16 +295,50 @@ export class NewProcurementRequestDialogComponent {
     });
   }
 
+  // ----- Helpers -----
+
+  formatAmount = (cents: number) => formatEuro(cents);
+
   private toCents(input: string): number {
     const n = parseLocaleNumber(input);
     if (!isFinite(n) || n <= 0) return 0;
     return Math.round(n * 100);
   }
 
-  private toPositiveInt(input: string): number {
+  private centsToLocaleString(cents?: number): string {
+    const v = (cents ?? 0) / 100;
+    return v.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+      useGrouping: false,
+    });
+  }
+
+  private toPositiveNumber(input: string): number {
     const s = String(input ?? '').trim();
-    if (!/^\d+$/.test(s)) return 0;
-    const n = Number(s);
+    if (!s) return 0;
+    const n = parseLocaleNumber(s);
     return Number.isFinite(n) && n > 0 ? n : 0;
+  }
+
+  private logInvalidControls(): void {
+    const errs: any = {};
+  
+    const dump = (grp: any, path: string[] = []) => {
+      Object.keys(grp.controls ?? {}).forEach(key => {
+        const c = grp.controls[key];
+        const p = [...path, key];
+        if (c instanceof FormGroup || c instanceof FormArray) {
+          dump(c, p);
+        } else {
+          if (c.invalid) {
+            errs[p.join('.')] = c.errors;
+          }
+        }
+      });
+    };
+  
+    dump(this.form);
+    console.warn('INVALID CONTROLS →', errs);
   }
 }

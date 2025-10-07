@@ -35,6 +35,27 @@ export function numberWithCommaValidator(): ValidatorFn {
   };
 }
 
+export function numberWithCommaValidatorZero(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const value = control.value;
+    if (value === null || value === undefined || value === '') {
+      return null; // don't block empty fields
+    }
+
+    const normalized = String(value).replace(',', '.').trim();
+    if (!/^[0-9]+(\.[0-9]{1,2})?$/.test(normalized)) {
+      return { invalidNumber: { value } };
+    }
+
+    const parsed = parseFloat(normalized);
+    if (isNaN(parsed) || parsed < 0) {
+      return { negativeNumber: { value } };
+    }
+
+    return null;
+  };
+}
+
 
 export function positiveIntegerValidator(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
@@ -48,10 +69,31 @@ export function positiveIntegerValidator(): ValidatorFn {
 }
 
 export function parseLocaleNumber(val: unknown): number {
-    if (val === null || val === undefined || val === '') return 0;
-    const n = parseFloat(String(val).replace(',', '.'));
-    return isFinite(n) ? n : 0;
+  if (val === null || val === undefined) return 0;
+  let s = String(val).trim();
+  if (!s) return 0;
+
+  const hasComma = s.includes(',');
+  const hasDot   = s.includes('.');
+
+  if (hasComma && hasDot) {
+    const lastComma = s.lastIndexOf(',');
+    const lastDot   = s.lastIndexOf('.');
+    const decimalSep = lastComma > lastDot ? ',' : '.';
+
+    if (decimalSep === ',') {
+      s = s.replace(/\./g, '');  // remove all dots (grouping)
+      s = s.replace(',', '.');   // decimal to dot
+    } else {
+      s = s.replace(/,/g, '');   // remove all commas (grouping)
+    }
+  } else if (hasComma) {
+    s = s.replace(',', '.');
   }
+
+  const n = Number(s);
+  return Number.isFinite(n) ? n : 0;
+}
 
 export const errorSnackBarConfig: MatSnackBarConfig = {
   duration: 5000,

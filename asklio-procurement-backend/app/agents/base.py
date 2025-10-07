@@ -9,7 +9,6 @@ I = TypeVar("I", bound=BaseModel)
 O = TypeVar("O", bound=BaseModel)
 
 class AgentError(RuntimeError): ...
-class AgentTimeout(AgentError): ...
 
 @contextmanager
 def deadline(seconds: float):
@@ -28,10 +27,6 @@ class Agent(Generic[I, O], ABC):
 
     @abstractmethod
     def run(self, payload: I) -> O: ...
-
-    def run_with_timeout(self, payload: I, timeout_s: float = 5.0) -> O:
-        with deadline(timeout_s):
-            return self.run(payload)
 
     @staticmethod
     def new_trace_id() -> str:

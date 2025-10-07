@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from typing import List, Optional
 from uuid import uuid4
 
@@ -18,9 +19,23 @@ from app.schemas.procurement import (
     ProcurementRequestUpdateIn,
     ProcurementRequestLiteOut,
     ProcurementRequestOut,
+    RequestDraftOut,
+    OrderLineDraftOut
 )
 from app.services.mappers import to_lite_out, to_detail_out
 from app.services.auth import ensure_manager
+from app.agents.registry import get_agent_registry
+from app.ai.client import get_ai_client
+
+# Agent contracts
+from app.agents.commodity_classifier.contracts import CommodityClassifyIn, CommodityGroupRef
+from app.agents.pdf_extractor.contracts import PdfExtractorOut, PdfExtractorIn
+
+import app.weaviate.operations as wx
+from app.weaviate.text_formatter import build_request_embedding_text 
+from app.agents.base import AgentError
+
+logger = logging.getLogger(__name__)
 
 
 # =========================
@@ -127,20 +142,13 @@ def create_request(
     """
     Create a new request with order lines, compute totals, and return the lite DTO.
     """
-    # Validate commodity group
-    commodity_group = (
-        db.query(CommodityGroup).filter(CommodityGroup.id == body.commodityGroupID).first()
-    )
-    if not commodity_group:
-        raise HTTPException(status_code=404, detail="Commodity group not found")
-
     # Build order lines & compute total in cents
-    total_cost_cents = 0
     order_line_rows: list[OrderLine] = []
+    total_price_cents: int = 0
 
     for line in body.orderLines:
         line_total_cents = line.unitPriceCents * line.quantity
-        total_cost_cents += line_total_cents
+        total_price_cents += line_total_cents
 
         order_line_rows.append(
             OrderLine(
@@ -152,21 +160,92 @@ def create_request(
                 totalPriceCents=line_total_cents,
             )
         )
+    
+    # Auto-classify commodity group via agent
+    try:
+        # Build agent input
+        order_lines_text = [
+            f"{ol.quantity} x {ol.description} @ {ol.unitPriceCents/100:.2f} per {ol.unit}"
+            for ol in body.orderLines
+        ]
+        # Provide all CGs as candidates
+        cg_rows: list[CommodityGroup] = db.query(CommodityGroup).order_by(CommodityGroup.id.asc()).all()
+        cg_refs = [
+            CommodityGroupRef(id=int(cg.id), label=cg.name, category=cg.category)
+            for cg in cg_rows
+        ]
+        agent_input = CommodityClassifyIn(
+            title=body.title,
+            vendor_name=body.vendorName,
+            vat_id=body.vatID,
+            order_lines_text=order_lines_text,
+            available_commodity_groups=cg_refs,
+            trace_id=str(uuid4()),
+        )
+        classifier = get_agent_registry().commodity_classifier
+        agent_result = classifier.run(agent_input)
+        chosen_cg_id = agent_result.suggested_commodity_group_id
+        chosen_conf = agent_result.confidence or 0.0
+        if chosen_cg_id is None:
+            chosen_cg_id = cg_rows[0].id if cg_rows else None
+            chosen_conf = 0.0
+        if chosen_cg_id is None:
+            raise HTTPException(status_code=500, detail="No commodity groups available for classification.")
+    except AgentError as e:
+        # Safe fall-back path: pick the first group with 0.0 confidence
+        logger.exception("Commodity classifier failed; using fallback: %s", e)
+        first_cg = db.query(CommodityGroup.id).order_by(CommodityGroup.id.asc()).first()
+        if not first_cg:
+            raise HTTPException(status_code=500, detail="No commodity groups available.")
+        chosen_cg_id = int(first_cg[0])
+        chosen_conf = 0.0
+        
+    shipping = body.shippingCents or 0
+    tax = body.taxCents or 0
+    discount = body.totalDiscountCents or 0
 
+    total_price_cents = total_price_cents + shipping + tax - discount
+    
     # Create request row
     new_request = ProcurementRequest(
         id=str(uuid4()),
         title=body.title,
         vendorName=body.vendorName,
         vatID=body.vatID,
-        commodityGroupID=body.commodityGroupID,
-        totalCosts=total_cost_cents,
+        commodityGroupID=chosen_cg_id,
+        commodityGroupConfidence=chosen_conf,
+        totalCosts=total_price_cents,
+        shippingCents=body.shippingCents,
+        taxCents=body.taxCents,
+        discountCents=body.totalDiscountCents,
         createdByUserID=user.id,
         order_lines=order_line_rows,
     )
     db.add(new_request)
     db.commit()
     db.refresh(new_request)
+    
+    # Index into Weaviate (use the same formatter you’ll later use at query time)
+    try:
+        ai_client = get_ai_client()
+        text = build_request_embedding_text(
+            title=body.title,
+            vendor_name=body.vendorName,
+            vat_id=body.vatID,
+            order_lines_text=[
+                f"{ol.quantity} x {ol.description} @ {ol.unitPriceCents/100:.2f} per {ol.unit}"
+                for ol in body.orderLines
+            ],
+        )
+        request_embedding = ai_client.embed(text)
+        wx.add(
+            request_id=new_request.id,
+            commodity_group=str(new_request.commodityGroupID),
+            embedded_request_context=text,
+            vector=request_embedding,
+        )
+    except Exception as e:
+        logger.exception("Weaviate index failed for request %s: %s", new_request.id, e)
 
     return to_lite_out(new_request)
 
@@ -227,6 +306,7 @@ def update_request(
         and body.commodityGroupID != procurement_request.commodityGroupID
     ):
         procurement_request.commodityGroupID = body.commodityGroupID
+        procurement_request.commodityGroupConfidence = None
         did_change = True
 
     # Nothing changed => return current projection (no audit row)
@@ -252,6 +332,27 @@ def update_request(
     db.add(procurement_request)
     db.commit()
     db.refresh(procurement_request)
+    
+    # --- Keep Weaviate in sync if CG changed ---
+    if (
+        body.commodityGroupID is not None
+        and body.commodityGroupID != previous_cg_id
+    ):
+        try:
+            updated = wx.update_commodity_group(
+                request_id=request_id,
+                new_commodity_group=str(body.commodityGroupID),
+            )
+            logger.info(
+                "Weaviate: updated %d objects for request_id=%s to CG=%s",
+                updated, request_id, body.commodityGroupID
+            )
+        except Exception as e:
+            # Do not fail the HTTP request if the vector update fails
+            logger.exception(
+                "Weaviate update_commodity_group failed for request_id=%s -> %s: %s",
+                request_id, body.commodityGroupID, e
+            )
 
     return to_lite_out(procurement_request)
 
@@ -270,3 +371,61 @@ def get_request_details(
 
     audit_entries = _load_audit_trail(db, request_id)
     return to_detail_out(procurement_request, audit_entries)
+
+
+def create_request_draft_from_pdf(
+    data: bytes,
+    *,
+    filename: str = "potential_procurement_request.pdf",
+    content_type: str = "application/pdf",
+) -> RequestDraftOut:
+    """
+    Extract a draft procurement request from the uploaded PDF.
+    """
+    trace_id = str(uuid4())
+
+    try:
+        agent = get_agent_registry().pdf_extractor
+        agent_input = PdfExtractorIn(
+            filename=filename,
+            content_type=content_type,
+            data=data,
+            trace_id=trace_id,
+        )
+        agent_out = agent.run(agent_input)
+
+    except AgentError as e:
+        # The extractor determined it's not a procurement request or failed parsing
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"Could not extract a procurement request: {e}",
+        )
+    except Exception as e:
+        # Any unexpected issue
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="PDF extraction failed unexpectedly.",
+        )
+
+    # Map agent -> RequestDraftOut
+    draft_lines = [
+        OrderLineDraftOut(
+            description=ol.description,
+            unitPriceCents=ol.unitPriceCents,
+            quantity=ol.quantity,
+            unit=ol.unit,
+            totalPriceCents=ol.totalPriceCents,
+        )
+        for ol in (agent_out.orderLines or [])
+    ]
+
+    return RequestDraftOut(
+        title=agent_out.title,
+        vendorName=agent_out.vendorName,
+        vatNumber=agent_out.vatNumber,
+        orderLines=draft_lines,
+        totalPriceCents=agent_out.totalPriceCents,
+        shippingCents=agent_out.shippingCents,
+        taxCents=agent_out.taxCents,
+        totalDiscountCents=agent_out.totalDiscountCents,
+    )

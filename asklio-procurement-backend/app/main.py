@@ -8,7 +8,6 @@ from app.db.init_db import init_db
 from app.routers import health, auth, procurement, commodity_groups
 from app.weaviate.bootstrap import ensure_schema
 from app.weaviate.client import get_client
-from app.db.migration import add_created_at_if_missing, add_created_by_user_if_missing
 
 
 logging.basicConfig(level=logging.INFO)
@@ -42,17 +41,24 @@ def _wait_for_weaviate(max_tries: int = 20, delay_s: float = 0.75) -> None:
 
 @app.on_event("startup")
 def on_startup() -> None:
-    # SQL tables
+    # 1) Create SQL tables
     Base.metadata.create_all(bind=engine)
 
-    # Local-only seed
+    # 2) Ensure Weaviate is ready and schema exists
+    _wait_for_weaviate()
+    ensure_schema()
+
+    # 3) Optionally seed database (and vector index)
     if settings.should_seed:
         logging.info("Seeding enabled (ENV=%s).", settings.ENV)
         with SessionLocal() as db:
             init_db(db)
     else:
         logging.info("Seeding disabled (ENV=%s).", settings.ENV)
-
-    # Weaviate schema (idempotent)
-    _wait_for_weaviate()
-    ensure_schema()
+        
+@app.on_event("shutdown")
+def on_shutdown() -> None:
+    try:
+        get_client().close()
+    except Exception:
+        pass

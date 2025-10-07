@@ -7,9 +7,13 @@ export interface ProcurementRequestDto {
     id: string;
     title: string;
     commodityGroup: CommodityGroupDto;
+    commodityGroupConfidence?: number;
     vendorName: string;
     vatNumber: string;
     totalCostsCent: number;
+    shippingCents?: number;
+    taxCents?: number;
+    totalDiscountCents?: number;
     requestorName: string;
     requestorDepartment: string;
     orderLines: OrderLineDto[];

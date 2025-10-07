@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
   template: `
     <div class="forbidden-wrap">
       <div class="panel">
-        <mat-icon class="lock-icon" fontSet="material-symbols-rounded">lock</mat-icon>
+        <mat-icon class="lock-icon">lock</mat-icon>
         <h1 class="title">Access Denied</h1>
         <p class="subtitle">
           You do not have the necessary permissions to view this page.

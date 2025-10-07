@@ -8,7 +8,7 @@
 
       <div class="right total-chip">
         <span class="label">Total</span>
-        <span class="value">{{ formatAmount(grandTotalCents()) }}</span>
+        <span class="value">{{ formatAmount(expectedTotalCents()) }}</span>
         <button mat-icon-button class="close-btn" (click)="close()">
           <mat-icon>close</mat-icon>
         </button>
@@ -38,15 +38,6 @@
           <mat-form-field appearance="outline">
             <mat-label>VAT ID</mat-label>
             <input matInput formControlName="vatNumber" placeholder="e.g., DE123456789">
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Commodity Group</mat-label>
-            <mat-select formControlName="commodityGroupId">
-              <mat-option *ngFor="let cg of commodityGroups" [value]="cg.id">
-                {{ cg.category }} — {{ cg.name }}
-              </mat-option>
-            </mat-select>
           </mat-form-field>
         </div>
       </section>
@@ -113,19 +104,57 @@
             </div>
           </div>
         </div>
-
-        <div class="grand-total-row">
-          <span class="label">Grand Total</span>
-          <span class="value strong">{{ formatAmount(grandTotalCents()) }}</span>
-        </div>
       </section>
+
+      <div class="pricing-summary">
+        <div class="row">
+          <mat-form-field appearance="outline" floatLabel="always">
+            <mat-label>Shipping</mat-label>
+            <input matInput formControlName="shipping" placeholder="0,00" inputmode="decimal">
+          </mat-form-field>
+      
+          <mat-form-field appearance="outline" floatLabel="always">
+            <mat-label>Tax (VAT)</mat-label>
+            <input matInput formControlName="tax" placeholder="0,00" inputmode="decimal">
+          </mat-form-field>
+      
+          <mat-form-field appearance="outline" floatLabel="always">
+            <mat-label>Total Discount</mat-label>
+            <input matInput formControlName="totalDiscount" placeholder="0,00" inputmode="decimal">
+          </mat-form-field>
+      
+          <div class="computed-total" aria-label="Computed Total">
+            <div class="label">Computed Total</div>
+            <div class="value">{{ formatAmount(expectedTotalCents()) }}</div>
+            <div class="hint" *ngIf="extractedGrandTotalCents !== null">
+              Extracted Total: {{ formatAmount(extractedGrandTotalCents) }}
+            </div>
+          </div>
+        </div>
+      
+        <div class="warn-banner" *ngIf="hasMismatch()">
+          <mat-icon>warning</mat-icon>
+          <span>{{ mismatchMessage() }}</span>
+        </div>
+      
+        <div class="error-banner" *ngIf="computedTotalNegative()">
+          <mat-icon>error</mat-icon>
+          <span>Computed total is negative. Please review discounts and amounts.</span>
+        </div>
+      </div>
     </form>
+
 
     <!-- Footer -->
     <footer class="dialog-actions">
       <div class="spacer"></div>
       <button mat-button type="button" (click)="close()">Cancel</button>
-      <button mat-flat-button color="primary" (click)="save()" type="button" [disabled]="!form.valid || lineGroups.length === 0">
+      <button
+        mat-flat-button
+        color="primary"
+        (click)="save()"
+        type="button"
+        [disabled]="computedTotalNegative() || form.invalid || lineGroups.length === 0">
         Save
       </button>
     </footer>

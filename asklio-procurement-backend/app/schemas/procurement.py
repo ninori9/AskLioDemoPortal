@@ -7,7 +7,7 @@ from app.models.enums import RequestStatus
 class OrderLineIn(BaseModel):
     description: str = Field(min_length=1, max_length=300)
     unitPriceCents: int = Field(gt=0)
-    quantity: int = Field(ge=1)
+    quantity: float = Field(ge=1)
     unit: str = Field(min_length=1, max_length=50)
 
     @field_validator("unitPriceCents")
@@ -21,7 +21,9 @@ class ProcurementRequestCreate(BaseModel):
     title: str = Field(min_length=1, max_length=200)
     vendorName: str = Field(min_length=1, max_length=200)
     vatID: str = Field(min_length=2, max_length=32)
-    commodityGroupID: int
+    shippingCents: Optional[int] = None
+    taxCents: Optional[int] = None
+    totalDiscountCents: Optional[int] = None
     orderLines: List[OrderLineIn]
 
 class ProcurementRequestUpdateIn(BaseModel):
@@ -34,6 +36,7 @@ class ProcurementRequestLiteOut(BaseModel):
     id: str
     title: str
     commodityGroup: CommodityGroupOut
+    commodityGroupConfidence: Optional[float] = None
     vendorName: str
     totalCostsCent: int
     requestorName: str
@@ -45,7 +48,7 @@ class OrderLineOut(BaseModel):
     id: str
     description: str
     unitPriceCents: int
-    quantity: int
+    quantity: float
     unit: str
     totalPriceCents: int
 
@@ -62,6 +65,7 @@ class ProcurementRequestOut(BaseModel):
     id: str
     title: str
     commodityGroup: CommodityGroupOut
+    commodityGroupConfidence: Optional[float] = None
     vendorName: str
     vatNumber: str
     totalCostsCent: int
@@ -70,5 +74,26 @@ class ProcurementRequestOut(BaseModel):
     orderLines: List[OrderLineOut]
     status: RequestStatus
     updateHistory: List[StatusUpdateOut]
+    shippingCents: Optional[int] = None
+    taxCents: Optional[int] = None
+    totalDiscountCents: Optional[int] = None
     createdAt: str
     version: int
+    
+
+class OrderLineDraftOut(BaseModel):
+    description: str
+    unitPriceCents: int
+    unit: str
+    totalPriceCents: int
+    quantity: float
+
+class RequestDraftOut(BaseModel):
+    title: Optional[str] = None
+    vendorName: Optional[str] = None
+    vatNumber: Optional[str] = None
+    totalPriceCents: Optional[int] = None
+    shippingCents: Optional[int] = None # shipping fees
+    taxCents: Optional[int] = None # sum of all taxes (MwSt/USt)
+    totalDiscountCents: Optional[int] = None
+    orderLines: List[OrderLineDraftOut] = Field(default_factory=list)

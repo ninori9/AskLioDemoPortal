@@ -66,6 +66,8 @@ export class ProcurementRequestDialogComponent {
     [RequestStatus.All]: '-',
   };
 
+  private readonly LOW_THRESHOLD = 0.5;
+
   statusLabel(s?: RequestStatus | null): string {
     return s ? REQUEST_STATUS_LABELS[s] ?? String(s) : '—';
   }
@@ -76,7 +78,6 @@ export class ProcurementRequestDialogComponent {
     this.commodityGroups = this.data.commodityGroups;
     this.sub = this.procurementService.getRequestByID(this.data.id).subscribe(req => {
       this.request = req;
-      console.log(this.request);
       this.form.setValue({
         status: req.status,
         commodityGroupId: req.commodityGroup.id
@@ -99,9 +100,6 @@ export class ProcurementRequestDialogComponent {
       status: formVal.status ?? undefined,
       commodityGroupID: formVal.commodityGroupId ?? undefined,
     };
-
-    console.log("Payload", payload)
-    console.log("commodity group", this.request.commodityGroup)
 
     this.loading = true;
     this.procurementService.updateRequest(this.request.id, payload).subscribe({
@@ -131,6 +129,45 @@ export class ProcurementRequestDialogComponent {
       case RequestStatus.Closed: return 'status-closed';
       default: return '';
     }
+  }
+
+  // Amount helpers
+  linesSubtotalCents(): number {
+    if (!this.request?.orderLines?.length) return 0;
+    return this.request.orderLines.reduce((sum, l) => sum + (l.totalPriceCents || 0), 0);
+  }
+
+  shippingCents(): number {
+    return this.request?.shippingCents ?? 0;
+  }
+  taxCents(): number {
+    return this.request?.taxCents ?? 0;
+  }
+  discountCents(): number {
+    return this.request?.totalDiscountCents ?? 0;
+  }
+
+  finalTotalCents(): number {
+    return this.request?.totalCostsCent ?? 0;
+  }
+
+  // Commodity group confidence
+  confidencePct(): string | null {
+    const v = this.request?.commodityGroupConfidence;
+    if (v === undefined || v === null) return null;
+    return `${Math.round(v * 100)}%`;
+  }
+  hasConfidence(): boolean {
+    const v = this.request?.commodityGroupConfidence;
+    return typeof v === 'number';
+  }
+  isCritical(): boolean {
+    const v = this.request?.commodityGroupConfidence;
+    return v === 0;
+  }
+  isLow(): boolean {
+    const v = this.request?.commodityGroupConfidence;
+    return typeof v === 'number' && v > 0 && v < this.LOW_THRESHOLD;
   }
 
   formatDate = formatDateString;
