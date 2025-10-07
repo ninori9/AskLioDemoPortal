@@ -170,7 +170,7 @@ Planned improvements for the next iteration:
 
 ````
 docker compose exec backend uvicorn app.main:app --reload
-```
+````
 
 - Access pgAdmin or similar via `POSTGRES_HOST=db`, port `5432`.
 - View Weaviate schema at [http://localhost:8080/v1/schema](http://localhost:8080/v1/schema).
