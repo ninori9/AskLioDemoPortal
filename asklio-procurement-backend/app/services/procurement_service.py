@@ -225,7 +225,7 @@ def create_request(
     db.commit()
     db.refresh(new_request)
     
-    # Index into Weaviate (use the same formatter you’ll later use at query time)
+    # Index into Weaviate
     try:
         ai_client = get_ai_client()
         text = build_request_embedding_text(
