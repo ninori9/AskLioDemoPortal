@@ -102,6 +102,20 @@ Use these accounts to log in and test the full workflow.
 
 ---
 
+## 🧪 Testing
+
+Unit tests focus on the core business logic inside the backend — especially the **procurement service**, which handles request creation, total calculations, and data integrity checks.
+
+### Run Tests
+
+You can run the test suite directly inside the backend container:
+
+```
+docker compose -f docker-compose.local.yml exec backend sh -lc "pytest -v"
+```
+
+---
+
 ## 🧩 Next Steps
 
 Planned improvements for the next iteration:
@@ -112,6 +126,18 @@ Planned improvements for the next iteration:
 
 ### 🤖 Agentic Structure
 - Evolve to a **distributed, multi-agent architecture** where each agent (e.g. PDF extractor, classifier, validator) can run independently and communicate via an orchestrator queue.
+
+### 🧪 Testing & Quality Assurance
+- Improved **testing** for backend services (FastAPI + agents).  
+- Set up **GitHub Actions CI** for automated test and linting runs on pull requests.
+
+### 🚀 Deployment & DevOps
+- Containerize the entire stack for **production-ready deployment** (e.g., Docker Swarm or Kubernetes).  
+- Add **logging and monitoring** (e.g., OpenTelemetry, Prometheus, Grafana) for observability of agent behavior and performance.
+
+### 💡 Usability & UI Enhancements
+- Introduce **search and filtering** for procurement requests.  
+- Add **bulk status updates** for managers. 
 
 ### ✅ Additional Agents
 - **Validation & Plausibility Checks**  

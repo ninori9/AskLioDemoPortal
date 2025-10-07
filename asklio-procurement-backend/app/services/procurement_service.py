@@ -154,10 +154,10 @@ def create_request(
             OrderLine(
                 id=str(uuid4()),
                 description=line.description,
-                unitPriceCents=line.unitPriceCents,
+                unitPriceCents=int(line.unitPriceCents),
                 quantity=line.quantity,
                 unit=line.unit,
-                totalPriceCents=line_total_cents,
+                totalPriceCents=int(line_total_cents),
             )
         )
     
@@ -200,11 +200,11 @@ def create_request(
         chosen_cg_id = int(first_cg[0])
         chosen_conf = 0.0
         
-    shipping = body.shippingCents or 0
-    tax = body.taxCents or 0
-    discount = body.totalDiscountCents or 0
+    shipping = int(body.shippingCents or 0)
+    tax = int(body.taxCents or 0)
+    discount = int(body.totalDiscountCents or 0)
 
-    total_price_cents = total_price_cents + shipping + tax - discount
+    total_price_cents = int(total_price_cents + shipping + tax - discount)
     
     # Create request row
     new_request = ProcurementRequest(
@@ -215,9 +215,9 @@ def create_request(
         commodityGroupID=chosen_cg_id,
         commodityGroupConfidence=chosen_conf,
         totalCosts=total_price_cents,
-        shippingCents=body.shippingCents,
-        taxCents=body.taxCents,
-        discountCents=body.totalDiscountCents,
+        shippingCents=shipping,
+        taxCents=tax,
+        discountCents=discount,
         createdByUserID=user.id,
         order_lines=order_line_rows,
     )
