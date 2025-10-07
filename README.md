@@ -58,15 +58,21 @@ After build and startup, visit:
 
 ### 3️⃣ Seed Data and Test Login
 
-When `SEED_ON_START=true`, the system automatically loads demo users and sample data.
+When `SEED_ON_START=true`, the system automatically loads **demo users**, **commodity groups**, and a few **example procurement requests** for testing.  
+This lets you explore the portal immediately without creating data manually.
 
-| Role | Username | Password |
-|------|-----------|-----------|
-| Procurement Manager | `peter.procurement` | `test123` |
-| Requestor | `randy.requestor` | `test123` |
-| Additional test users | see backend seed logs |
+| Role | Username | Password | Department | Notes |
+|------|-----------|-----------|-------------|--------|
+| 🧑‍💼 Procurement Manager | `peter.procurement` | `test123` | Procurement | Full access to manage and classify requests |
+| 🙋‍♂️ Requestor | `randy.requestor` | `test123` | HR | Can create new requests and upload vendor offers |
+| 🙋‍♀️ Requestor | `jane.smith` | `test123` | Creative Marketing | Can create new requests with automatic PDF extraction |
+| 🧾 Dual Role (Manager + Requestor) | `max.mueller` | `test123` | Accounting | Has both manager and requestor permissions |
 
-Use these to explore the portal and test the full workflow.
+#### Additional Seed Data
+- 💼 **Commodity groups** for automatic AI classification  
+- 📦 **Sample procurement requests** with example statuses and change logs  
+
+Use these accounts to log in and test the full workflow.
 
 ---
 
