@@ -154,7 +154,7 @@
         color="primary"
         (click)="save()"
         type="button"
-        [disabled]="computedTotalNegative() || form.invalid || lineGroups.length === 0">
+        [disabled]="this.form.invalid || this.lineGroups.length === 0 || this.computedTotalNegative()">
         Save
       </button>
     </footer>

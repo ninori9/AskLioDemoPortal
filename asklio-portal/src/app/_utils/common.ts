@@ -19,39 +19,58 @@ export function formatDateString(isoString: string): string {
     return format(date, "MM/dd/yyyy, hh:mm a"); // e.g. "09/23/2025, 02:30 PM"
 }
 
-export function numberWithCommaValidator(): ValidatorFn {
-  return (control: AbstractControl): ValidationErrors | null => {
-    if (control.value === null || control.value === undefined || control.value === '') {
-      return null; // required handles empty
-    }
-    const normalized = String(control.value).replace(',', '.');
-    const valid = /^[0-9]+(\.[0-9]{1,2})?$/.test(normalized);
-    const parsed = parseFloat(normalized);
-    const isPositive = !isNaN(parsed) && parsed > 0;
+function normalizeLocaleNumber(input: unknown, maxDecimals = 2): { ok: boolean; n?: number } {
+  if (input === null || input === undefined) return { ok: false };
+  let s = String(input).trim();
+  if (!s) return { ok: false };
 
-    if (!valid) return { invalidNumber: { value: control.value } };
-    if (!isPositive) return { nonPositive: { value: control.value } };
+  // Gruppierungen raus: Space, NBSP, Thin space, schmale Leerzeichen, Apostrophe, etc.
+  s = s.replace(/[\s\u00A0\u2000-\u200A\u202F\u205F\u3000'’`´]/g, '');
+
+  const hasComma = s.includes(',');
+  const hasDot   = s.includes('.');
+
+  if (hasComma && hasDot) {
+    const lastComma = s.lastIndexOf(',');
+    const lastDot   = s.lastIndexOf('.');
+    const decimalSep = lastComma > lastDot ? ',' : '.';
+    if (decimalSep === ',') {
+      s = s.replace(/\./g, ''); // Punkte = Gruppierung
+      s = s.replace(',', '.');  // Dezimalzeichen -> Punkt
+    } else {
+      s = s.replace(/,/g, '');  // Komma = Gruppierung
+      // Punkt bleibt Dezimal
+    }
+  } else if (hasComma) {
+    s = s.replace(',', '.'); // Dezimal-Komma -> Punkt
+  }
+
+  const re = new RegExp(`^[0-9]+(?:\\.[0-9]{1,${maxDecimals}})?$`);
+  if (!re.test(s)) return { ok: false };
+
+  const n = Number(s);
+  if (!Number.isFinite(n)) return { ok: false };
+  return { ok: true, n };
+}
+
+export function numberWithLocaleValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    const v = control.value;
+    if (v === null || v === undefined || String(v).trim() === '') return null;
+    const res = normalizeLocaleNumber(v, 2);
+    if (!res.ok) return { invalidNumber: { value: v } };
+    if ((res.n ?? 0) <= 0) return { nonPositive: { value: v } };
     return null;
   };
 }
 
-export function numberWithCommaValidatorZero(): ValidatorFn {
+export function numberWithLocaleValidatorZero(): ValidatorFn {
   return (control: AbstractControl): ValidationErrors | null => {
-    const value = control.value;
-    if (value === null || value === undefined || value === '') {
-      return null; // don't block empty fields
-    }
-
-    const normalized = String(value).replace(',', '.').trim();
-    if (!/^[0-9]+(\.[0-9]{1,2})?$/.test(normalized)) {
-      return { invalidNumber: { value } };
-    }
-
-    const parsed = parseFloat(normalized);
-    if (isNaN(parsed) || parsed < 0) {
-      return { negativeNumber: { value } };
-    }
-
+    const v = control.value;
+    if (v === null || v === undefined || String(v).trim() === '') return null;
+    const res = normalizeLocaleNumber(v, 2);
+    if (!res.ok) return { invalidNumber: { value: v } };
+    if ((res.n ?? -1) < 0) return { negativeNumber: { value: v } };
     return null;
   };
 }

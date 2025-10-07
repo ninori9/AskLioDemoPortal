@@ -10,7 +10,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { RequestDraftDto } from '../../../data/dtos/request-draft.dto';
 import { ProcurementRequestDto } from '../../../data/dtos/procurement-request.dto';
-import { formatEuro, numberWithCommaValidator, numberWithCommaValidatorZero, parseLocaleNumber, positiveIntegerValidator } from '../../../_utils/common';
+import { formatEuro, numberWithLocaleValidator, numberWithLocaleValidatorZero, parseLocaleNumber } from '../../../_utils/common';
 import { CreateProcurementRequestDto } from '../../../data/dtos/create-procurement-request.dto';
 import { ProcurementService } from '../../../services/procurement/procurement.service';
 import { ErrorService } from '../../../services/error/error.service';
@@ -94,9 +94,9 @@ export class NewProcurementRequestDialogComponent {
       vatNumber: this.formBuilder.nonNullable.control('', [Validators.required, Validators.pattern(/^[A-Z]{2}[A-Z0-9]{8,12}$/i)]),
       orderLines: this.formBuilder.array<LineFG>([]),
 
-      shipping:      this.formBuilder.nonNullable.control('', [numberWithCommaValidatorZero()]),
-      tax:           this.formBuilder.nonNullable.control('', [numberWithCommaValidatorZero()]),
-      totalDiscount: this.formBuilder.nonNullable.control('', [numberWithCommaValidatorZero()]),
+      shipping:      this.formBuilder.nonNullable.control('', [numberWithLocaleValidatorZero()]),
+      tax:           this.formBuilder.nonNullable.control('', [numberWithLocaleValidatorZero()]),
+      totalDiscount: this.formBuilder.nonNullable.control('', [numberWithLocaleValidatorZero()]),
     });
   }
 
@@ -158,17 +158,17 @@ export class NewProcurementRequestDialogComponent {
   
       const lineForm: LineFG = this.formBuilder.group({
         description: this.formBuilder.nonNullable.control(
-          description,
-          { validators: [Validators.required, Validators.maxLength(200)] }
+          description?.slice(0, 300) || '',
+          { validators: [Validators.required, Validators.maxLength(300)] }
         ),
         // Dialog expects a *string* in euros with locale formatting
         unitPrice: this.formBuilder.nonNullable.control(
           this.centsToLocaleString(unitPriceCents),
-          { validators: [Validators.required, numberWithCommaValidator()] }
+          { validators: [Validators.required, numberWithLocaleValidator()] }
         ),
         quantity: this.formBuilder.nonNullable.control(
           String(quantity),
-          { validators: [Validators.required, numberWithCommaValidator()] }
+          { validators: [Validators.required, numberWithLocaleValidator()] }
         ),
         unit: this.formBuilder.nonNullable.control(
           unit,
@@ -189,8 +189,8 @@ export class NewProcurementRequestDialogComponent {
   addLine() {
     const lineForm: LineFG = this.formBuilder.group({
       description: this.formBuilder.nonNullable.control('', { validators: [Validators.required, Validators.maxLength(300)] }),
-      unitPrice:   this.formBuilder.nonNullable.control('', { validators: [Validators.required, numberWithCommaValidator()] }),
-      quantity:    this.formBuilder.nonNullable.control('1', { validators: [Validators.required, numberWithCommaValidator()] }),
+      unitPrice:   this.formBuilder.nonNullable.control('', { validators: [Validators.required, numberWithLocaleValidator()] }),
+      quantity:    this.formBuilder.nonNullable.control('1', { validators: [Validators.required, numberWithLocaleValidator()] }),
       unit:        this.formBuilder.nonNullable.control('pcs', { validators: [Validators.required, Validators.maxLength(50)] })
     });
   
@@ -254,8 +254,7 @@ export class NewProcurementRequestDialogComponent {
   }
 
   save(): void {
-    if (this.form.invalid || this.lineGroups.length === 0) {
-      this.logInvalidControls();
+    if (this.form.invalid || this.lineGroups.length === 0 || this.computedTotalNegative()) {
       return;
     };
   
@@ -319,26 +318,5 @@ export class NewProcurementRequestDialogComponent {
     if (!s) return 0;
     const n = parseLocaleNumber(s);
     return Number.isFinite(n) && n > 0 ? n : 0;
-  }
-
-  private logInvalidControls(): void {
-    const errs: any = {};
-  
-    const dump = (grp: any, path: string[] = []) => {
-      Object.keys(grp.controls ?? {}).forEach(key => {
-        const c = grp.controls[key];
-        const p = [...path, key];
-        if (c instanceof FormGroup || c instanceof FormArray) {
-          dump(c, p);
-        } else {
-          if (c.invalid) {
-            errs[p.join('.')] = c.errors;
-          }
-        }
-      });
-    };
-  
-    dump(this.form);
-    console.warn('INVALID CONTROLS →', errs);
   }
 }
