@@ -27,7 +27,9 @@ SYSTEM_PROMPT = (
     "(EN: Supplier, Vendor, Issued by; DE: Lieferant, Anbieter, Firma).\n"
     "- vatNumber: supplier VAT or tax ID "
     "(EN: VAT ID, Tax ID; DE: USt-IdNr., Steuernummer), for example 'DE123456789'."
-    "Important: This is not the IBAN or banking number, do not confuse this. \n\n"
+    "Important: This is not the IBAN or banking number — do not confuse this. "
+"Only include a VAT/tax number if it is explicitly visible and clearly labeled as such. "
+"If you are not fully certain that the number belongs to the vendor’s tax identification, leave it empty.\n\n"
 
     "───────────────────────────────────────────────\n"
     "3. ORDER LINE EXTRACTION\n"
