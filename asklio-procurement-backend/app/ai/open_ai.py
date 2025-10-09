@@ -13,7 +13,7 @@ class OpenAIClient(AIClient):
         self,
         *,
         api_key: str,
-        chat_model: str = "gpt-4.1-2025-04-14",
+        chat_model: str = "gpt-5-2025-08-07",
         embed_model: str = "text-embedding-3-large",
         default_temperature: float = 0.2,
         default_max_output_tokens: int = 800,
@@ -28,16 +28,14 @@ class OpenAIClient(AIClient):
     def complete_text(
         self,
         messages: List[Dict[str, Any]],
-        *,
-        temperature: float | None = None,
-        max_output_tokens: int | None = None,
+        model: str | None = None,
     ) -> Tuple[str, Dict[str, Any]]:
+        model_to_use = model or self.chat_model
         # Using Responses API for simple text
         resp = self.client.responses.create(
-            model=self.chat_model,
-            input=messages,  # list of {role, content}
-            temperature=self._t(temperature),
-            max_output_tokens=self._m(max_output_tokens),
+            model=model_to_use,
+            input=messages,
+            rreasoning=None if model else {"effort": "medium"},
         )
         text = getattr(resp, "output_text", "") or ""
         meta = {"id": getattr(resp, "id", None), "model": getattr(resp, "model", self.chat_model)}
@@ -49,20 +47,18 @@ class OpenAIClient(AIClient):
         messages: List[Dict[str, Any]],
         *,
         response_model: Type[BaseModel],
-        temperature: float | None = None,
-        max_output_tokens: int | None = None,
+        model: str | None = None,
     ) -> Tuple[BaseModel, Dict[str, Any]]:
         """
         Use the new responses.parse API with Pydantic (SDK >= 1.40).
         """
+        model_to_use = model or self.chat_model
         response = self.client.responses.parse(
-            model=self.chat_model,
+            model=model_to_use,
             input=messages,
-            temperature=temperature or self.temperature,
-            max_output_tokens=max_output_tokens or self.max_output_tokens,
+            reasoning=None if model else {"effort": "medium"},
             text_format=response_model,
         )
-        logger.info(response)
 
         # handle refusals explicitly
         if getattr(response, "refusal", None):

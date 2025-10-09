@@ -1,15 +1,18 @@
 from __future__ import annotations
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import base64
+from .internal_types import LLMExtractedProcurementData
+import fitz
 
 
 SYSTEM_PROMPT = (
-    "You are a procurement document analyzer.\n\n"
+    "You are a procurement document analyzer for Lio Technologies GmbH. You will analyze either the already extracted text fron a PDF or the PDF itself"
+    "The PDF should be a vendor offer or other procurement-related document."
 
     "───────────────────────────────────────────────\n"
     "1. DETECTION\n"
     "───────────────────────────────────────────────\n"
-    "Determine first whether the PDF text represents a procurement-related document "
+    "Determine first whether the PDF / PDF text represents a procurement-related document "
     "(such as an offer, quote, invoice, order, or purchase request). "
     "If it is NOT such a document, set isProcurementRequest=false and leave all other fields empty.\n\n"
 
@@ -23,7 +26,8 @@ SYSTEM_PROMPT = (
     "- vendorName: supplier or company issuing the document "
     "(EN: Supplier, Vendor, Issued by; DE: Lieferant, Anbieter, Firma).\n"
     "- vatNumber: supplier VAT or tax ID "
-    "(EN: VAT ID, Tax ID; DE: USt-IdNr., Steuernummer), for example 'DE123456789'.\n\n"
+    "(EN: VAT ID, Tax ID; DE: USt-IdNr., Steuernummer), for example 'DE123456789'."
+    "Important: This is not the IBAN or banking number, do not confuse this. \n\n"
 
     "───────────────────────────────────────────────\n"
     "3. ORDER LINE EXTRACTION\n"
@@ -98,7 +102,7 @@ SYSTEM_PROMPT = (
     "  1) Remove/ignore any lines flagged as alternatives/options (per §3) first.\n"
     "  2) Prefer leaving optional summary fields (shippingCents, discountCents) empty rather than duplicating line items.\n"
     "  3) Only include an alternative line if its inclusion is explicitly evidenced OR necessary to match the final total.\n\n"
-
+    
     "───────────────────────────────────────────────\n"
     "8. EXAMPLES \n"
     "───────────────────────────────────────────────\n"
@@ -157,3 +161,118 @@ def build_extraction_messages_from_pdf(input_data: bytes) -> List[Dict]:
             ],
         },
     ]
+
+def build_recovery_messages_from_pdf(
+    input_data,
+    *,
+    missing_fields: List[str],
+    current_data: LLMExtractedProcurementData,
+) -> List[Dict]:
+    """
+    Image-based recovery pass for missing fields (vendorName, vatNumber, orderLines).
+    - If orderLines are missing, render ALL pages; otherwise render first & last only.
+    - Attach images using Responses API content parts: input_image + image_url:{url: dataURI}.
+    """
+    assert missing_fields, "missing_fields must not be empty."
+
+    need_lines = "orderLines" in missing_fields
+    images = (
+        pdf_to_base64_images_all_pages(input_data.data, dpi=300)
+        if need_lines
+        else pdf_to_base64_images(input_data.data, dpi=300)
+    )
+    if not images:
+        return []
+
+    missing_str = ", ".join(missing_fields)
+
+    system_prompt = (
+        "You are a procurement document analyzer. You receive page images of a PDF and must fill ONLY the fields "
+        "that were missing from a previous text-layer parse.\n\n"
+        "The document should be a vendor offer.\n"
+        "GUIDELINES:\n"
+        "• Use any visible text on the provided images (e.g., low-contrast header/footer, logos, imprints, tables).\n"
+        "• Prioritize reading the footer on the last page and the header on the first page if relevant information appears there.\n"
+        "• Never guess; leave any value empty if you cannot find it confidently.\n"
+        "• 'taxNumber' in this context refers to the vendor's VAT/tax identifier.\n"
+        "• Return a complete LLMExtractedProcurementData object but only fill the missing fields; "
+        "  keep already-known fields as they are (the caller will merge).\n\n"
+        "FIELDS (RECOVERY TARGETS):\n"
+        "• vendorName: Legal/brand name of the supplier issuing the document (logo/letterhead, footer/imprint, contact block). Do NOT return buyer name.\n"
+        "• vatNumber: Vendor VAT/tax ID (e.g., 'USt-IdNr.', 'USt-ID', 'VAT No.', 'Tax ID', 'Steuernummer'). "
+        "  Accept formats like DE + 9 digits or valid EU/local formats. Exclude IBAN/BIC, phone, order ids, HRB.\n\n"
+        "ORDER LINE EXTRACTION (only if requested among missing fields):\n"
+        "• description — human-readable item/service.\n"
+        "• unit — e.g., pcs/item/hour/license (DE: Stk., Std., Stück). Use '-' if not specified.\n"
+        "• quantity — numeric; use 1 if only a single item is shown and no quantity is indicated.\n"
+        "• unitPriceCents — NET unit price in integer cents after any per-line discount.\n"
+        "• totalPriceCents — NET line total in integer cents (prefer explicit line total; else quantity × unit).\n"
+        "Rules: prefer NET values; if per-line discount is shown, use discounted amounts; do NOT create lines for taxes/totals; "
+        "shipping as a normal line stays a line (don’t duplicate into shippingCents); exclude alternatives/options unless explicitly selected or needed to match the final total.\n"
+        "Normalize numbers: remove currency symbols and thousands separators; accept comma/dot decimals.\n"
+    )
+
+    user_text = (
+        "Current (possibly incomplete) parsed data:\n"
+        f"{stringify_procurement_core(current_data)}\n\n"
+        f"Missing fields to recover now: {missing_str}\n"
+        "Read the attached images and recover ONLY the missing fields. "
+        "Do not invent values. If a field cannot be found, leave it empty."
+    )
+
+    image_parts = [
+        {"type": "input_image", "image_url": data_uri, "detail": "high"}  # detail is optional
+        for (_filename, data_uri) in images
+    ]
+
+    return [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": [{"type": "input_text", "text": user_text}, *image_parts]},
+    ]
+
+
+def stringify_procurement_core(p: LLMExtractedProcurementData) -> str:
+    """
+    Compact one-liner summary for recovery context (keeps the prompt small).
+    """
+    lines = []
+    lines.append(f"isProcurementRequest: {p.isProcurementRequest}")
+    lines.append(f"title: {p.title or ''}")
+    lines.append(f"vendorName: {p.vendorName or ''}")
+    lines.append(f"vatNumber: {p.vatNumber or ''}")
+    lines.append(f"orderLines.count: {len(p.orderLines or [])}")
+    return "\n".join(lines)
+
+
+def pdf_to_base64_images(pdf_bytes: bytes, dpi: int = 264) -> List[Tuple[str, str]]:
+    """
+    Render the first and last page of a PDF into base64-encoded PNG data URIs.
+    Fully in-memory; no filesystem writes.
+    Returns: [(filename, data_uri), ...]
+    """
+    images: List[Tuple[str, str]] = []
+    with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+        if len(doc) == 0:
+            return images
+
+        pages_to_render = [0] if len(doc) == 1 else [0, len(doc) - 1]
+        for i in pages_to_render:
+            page = doc.load_page(i)
+            pix = page.get_pixmap(dpi=dpi, alpha=False)
+            png_bytes = pix.tobytes("png")
+            b64 = base64.b64encode(png_bytes).decode("utf-8")
+            data_uri = f"data:image/png;base64,{b64}"
+            images.append((f"page-{i+1}.png", data_uri))
+    return images
+
+def pdf_to_base64_images_all_pages(pdf_bytes: bytes, dpi: int = 200) -> List[Tuple[str, str]]:
+    images: List[Tuple[str, str]] = []
+    with fitz.open(stream=pdf_bytes, filetype="pdf") as doc:
+        for i in range(len(doc)):
+            page = doc.load_page(i)
+            pix = page.get_pixmap(dpi=dpi, alpha=False)
+            png_bytes = pix.tobytes("png")
+            b64 = base64.b64encode(png_bytes).decode("utf-8")
+            data_uri = f"data:image/png;base64,{b64}"
+            images.append((f"page-{i+1}.png", data_uri))
+    return images

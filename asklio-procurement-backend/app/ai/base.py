@@ -9,6 +9,7 @@ class AIClient(Protocol):
         *,
         temperature: float | None = None,
         max_output_tokens: int | None = None,
+        model: str | None = None,
     ) -> Tuple[str, Dict[str, Any]]:
         ...
 
@@ -19,6 +20,7 @@ class AIClient(Protocol):
         response_model: Type[BaseModel],  # Pydantic model class
         temperature: float | None = None,
         max_output_tokens: int | None = None,
+        model: str | None = None,
     ) -> Tuple[BaseModel, Dict[str, Any]]:
         ...
 

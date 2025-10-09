@@ -1,20 +1,25 @@
 FROM python:3.12-slim
 
-# Set working directory
+# System deps for OCR and PDF rasterization
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tesseract-ocr \
+    tesseract-ocr-eng \
+    tesseract-ocr-deu \
+    poppler-utils \
+  && rm -rf /var/lib/apt/lists/*
+
+# Help Tesseract find lang data in minimal images
+ENV TESSDATA_PREFIX=/usr/share/tesseract-ocr/5/tessdata/
+
 WORKDIR /app
 
-# Copy dependency list first (for better layer caching)
+# Install Python deps first for caching
 COPY requirements.txt .
-
-# Install dependencies
 RUN pip install --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
-# Copy the backend code
+# App code
 COPY app/ ./app
 
-# Expose FastAPI default port
 EXPOSE 8000
-
-# Run the FastAPI app with uvicorn
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

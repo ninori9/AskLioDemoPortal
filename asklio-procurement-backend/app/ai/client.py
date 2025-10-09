@@ -3,7 +3,7 @@ from app.core.config import settings
 from app.ai.open_ai import OpenAIClient
 from app.ai.base import AIClient
 
-DEFAULT_GEN_MODEL = "gpt-4.1-2025-04-14"
+DEFAULT_GEN_MODEL = "gpt-5-2025-08-07"
 DEFAULT_EMBED_MODEL = "text-embedding-3-large"
 
 @lru_cache(maxsize=1)

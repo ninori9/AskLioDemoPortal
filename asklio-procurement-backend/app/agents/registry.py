@@ -1,4 +1,3 @@
-# app/agents/registry.py
 from dataclasses import dataclass
 from functools import lru_cache
 from app.ai.client import get_ai_client
