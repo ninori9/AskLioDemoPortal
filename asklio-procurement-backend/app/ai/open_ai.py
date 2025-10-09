@@ -35,7 +35,7 @@ class OpenAIClient(AIClient):
         resp = self.client.responses.create(
             model=model_to_use,
             input=messages,
-            rreasoning=None if model else {"effort": "medium"},
+            reasoning=None if model else {"effort": "medium"},
         )
         text = getattr(resp, "output_text", "") or ""
         meta = {"id": getattr(resp, "id", None), "model": getattr(resp, "model", self.chat_model)}
