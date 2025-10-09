@@ -37,6 +37,42 @@ class PDFTextExtractor(AbstractPDFExtractor):
     
     def run(self, input_data: PdfExtractorIn) -> PdfExtractorOut:
         logger.info("Starting PDF extraction: %s", input_data.filename)
+        
+        # Step 2 — LLM fallback on raw PDF (input_file)
+        try:
+            pdf_messages = build_extraction_messages_from_pdf(input_data)
+            parsed_pdf, _meta_pdf = self._ai.complete_pydantic(
+                messages=pdf_messages,
+                response_model=LLMExtractedProcurementData,
+                model="gpt-4.1-2025-04-14"
+            )
+            llm_pdf: LLMExtractedProcurementData = parsed_pdf
+            logger.info("PDF extraction done.")
+            if llm_pdf.isProcurementRequest is not True:
+                raise AgentError("PDF is not a valid procurement request")
+
+            if self._validate_numeric_consistency(llm_pdf) and self._has_required_fields(llm_pdf):
+                return self._return_out(llm_pdf, input_data.trace_id)
+            else:
+                missing_fields = self._missing_fields_for_recovery(llm_pdf)
+                logger.info(f"Missing fields {missing_fields}")
+                if not missing_fields:
+                    return self._return_out(llm_pdf, input_data.trace_id)
+                fill_gaps = build_recovery_messages_from_pdf(
+                    input_data=input_data,
+                    missing_fields=missing_fields,
+                    current_data=llm_pdf,
+                )
+                if not fill_gaps:
+                    return self._return_out(llm_pdf, input_data.trace_id)
+                recovered, _meta_pdf =  self._ai.complete_pydantic(
+                    messages=fill_gaps,
+                    response_model=LLMExtractedProcurementData,
+                )
+                merged = self._merge_missing_fields(base=llm_pdf, patch=recovered)
+                return self._return_out(merged, input_data.trace_id)
+        except Exception as e:
+            logger.info("LLM on raw PDF failed: %s", e)
 
         # Step 1 — local text extraction
         result = extract_text_from_pdf(input_data.data)
@@ -73,42 +109,6 @@ class PDFTextExtractor(AbstractPDFExtractor):
                 logger.warning("Text extracted but short (%d chars) → consider OCR later.", text_len)
 
         logger.warning("Local text extraction did not return results for %s.", input_data.filename)
-        # Step 2 — LLM fallback on raw PDF (input_file)
-        try:
-            pdf_messages = build_extraction_messages_from_pdf(input_data)
-            parsed_pdf, _meta_pdf = self._ai.complete_pydantic(
-                messages=pdf_messages,
-                response_model=LLMExtractedProcurementData,
-                model="gpt-4.1-2025-04-14"
-            )
-            llm_pdf: LLMExtractedProcurementData = parsed_pdf
-            logger.info("PDF extraction done.")
-            if llm_pdf.isProcurementRequest is not True:
-                raise AgentError("PDF is not a valid procurement request")
-
-            if self._validate_numeric_consistency(llm_pdf) and self._has_required_fields(llm_pdf):
-                return self._return_out(llm_pdf, input_data.trace_id)
-            else:
-                missing_fields = self._missing_fields_for_recovery(llm_pdf)
-                logger.info(f"Missing fields {missing_fields}")
-                if not missing_fields:
-                    return self._return_out(llm_pdf, input_data.trace_id)
-                fill_gaps = build_recovery_messages_from_pdf(
-                    input_data=input_data,
-                    missing_fields=missing_fields,
-                    current_data=llm_pdf,
-                )
-                if not fill_gaps:
-                    return self._return_out(llm_pdf, input_data.trace_id)
-                recovered, _meta_pdf =  self._ai.complete_pydantic(
-                    messages=fill_gaps,
-                    response_model=LLMExtractedProcurementData,
-                )
-                merged = self._merge_missing_fields(base=llm_pdf, patch=recovered)
-                return self._return_out(merged, input_data.trace_id)
-        except Exception as e:
-            logger.info("LLM on raw PDF failed: %s", e)
-    
     
     def _parse_llm_order_lines(self, input_order_lines: List[LLMExtractedOrderLine]) -> List[ExtractedOrderLine]:
         order_lines = []

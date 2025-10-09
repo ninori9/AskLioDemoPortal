@@ -74,8 +74,7 @@ class LLMCommodityClassifier(AbstractCommodityClassifier):
             parsed, _meta = self._ai.complete_pydantic(
                 messages=messages,
                 response_model=_LLMScoring,
-                temperature=self._temperature,
-                max_output_tokens=self._max_tokens,
+                model="gpt-4.1-2025-04-14"
             )
             llm_result: _LLMScoring = parsed
         except Exception as e:
@@ -158,8 +157,7 @@ class LLMCommodityClassifier(AbstractCommodityClassifier):
                 final_decision, _meta = self._ai.complete_pydantic(
                     messages=messages,
                     response_model=_FinalDecision,
-                    temperature=self._temperature,
-                    max_output_tokens=self._max_tokens,
+                    model="gpt-4.1-2025-04-14"
                 )
                 llm_decision: _FinalDecision = final_decision
                 chosen_id = llm_decision.chosen_id
