@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 class PDFTextExtractor(AbstractPDFExtractor):
     """
     Minimal, deterministic flow:
-      1) Extract text using PDF text extractor libraries
+      1)(Currently disabled for performance) Text-layer extraction via local PDF parser.
+        Trade-off: Peformance vs token usage
+        To re-enable it, simply uncomment Step 1 below.
       2) Fallback to LLM based PDF text extraction
       3) Parse result to expected output
     """
@@ -38,7 +40,48 @@ class PDFTextExtractor(AbstractPDFExtractor):
     def run(self, input_data: PdfExtractorIn) -> PdfExtractorOut:
         logger.info("Starting PDF extraction: %s", input_data.filename)
         
+        # ---------------------------------------------------------------------
+        # Step 1 — Local text extraction (DISABLED for performance reasons)
+        # ---------------------------------------------------------------------
+        # result = extract_text_from_pdf(input_data.data)
+        #
+        # if result.success and (result.text or ""):
+        #     logger.info("Text successfully extracted using %s", result.method)
+        #     text_len = len(result.text)
+        #     logger.debug("Extracted text length: %d", text_len)
+        #
+        #     if text_len >= _MIN_USEFUL_CHARS:
+        #         try:
+        #             messages = build_extraction_messages(result.text)
+        #             parsed, _meta = self._ai.complete_pydantic(
+        #                 messages=messages,
+        #                 response_model=LLMExtractedProcurementData,
+        #                 model="gpt-4.1-2025-04-14",
+        #             )
+        #             llm_result: LLMExtractedProcurementData = parsed
+        #             if llm_result.isProcurementRequest is not True:
+        #                 raise AgentError("PDF is not a valid procurement request")
+        #
+        #             if self._validate_numeric_consistency(llm_result) and self._has_required_fields(llm_result):
+        #                 return self._return_out(llm_result, input_data.trace_id)
+        #
+        #             logger.warning(
+        #                 "Text-layer parse incomplete/inconsistent → will try PDF (input_file) fallback. (%s)",
+        #                 input_data.filename,
+        #             )
+        #         except Exception as e:
+        #             logger.info("LLM on text-layer failed: %s", e)
+        #             # fall through to PDF fallback
+        #
+        #     else:
+        #         logger.warning("Text extracted but short (%d chars) → consider OCR later.", text_len)
+        #
+        # else:
+        #     logger.warning("Local text extraction failed or empty for %s.", input_data.filename)
+        #
+        # ---------------------------------------------------------------------
         # Step 2 — LLM fallback on raw PDF (input_file)
+        # ---------------------------------------------------------------------        
         try:
             pdf_messages = build_extraction_messages_from_pdf(input_data)
             parsed_pdf, _meta_pdf = self._ai.complete_pydantic(
@@ -73,42 +116,7 @@ class PDFTextExtractor(AbstractPDFExtractor):
                 return self._return_out(merged, input_data.trace_id)
         except Exception as e:
             logger.info("LLM on raw PDF failed: %s", e)
-
-        # Step 1 — local text extraction
-        result = extract_text_from_pdf(input_data.data)
-
-        if result.success and (result.text or ""):
-            logger.info("Text successfully extracted using %s", result.method)
-            text_len = len(result.text)
-            logger.debug("Extracted text length: %d", text_len)
-
-            if text_len >= _MIN_USEFUL_CHARS:
-                try:
-                    messages = build_extraction_messages(result.text)
-                    parsed, _meta = self._ai.complete_pydantic(
-                        messages=messages,
-                        response_model=LLMExtractedProcurementData,
-                        model="gpt-4.1-2025-04-14"
-                    )
-                    llm_result: LLMExtractedProcurementData = parsed
-                    if llm_result.isProcurementRequest is not True:
-                        raise AgentError("PDF is not a valid procurement request")
-
-                    if self._validate_numeric_consistency(llm_result) and self._has_required_fields(llm_result):
-                        return self._return_out(llm_result, input_data.trace_id)
-
-                    logger.warning(
-                        "Text-layer parse incomplete/inconsistent → will try PDF (input_file) fallback. (%s)",
-                        input_data.filename,
-                    )
-                except Exception as e:
-                    logger.info("LLM on text-layer failed: %s", e)
-                    # fall through to PDF fallback
-
-            else:
-                logger.warning("Text extracted but short (%d chars) → consider OCR later.", text_len)
-
-        logger.warning("Local text extraction did not return results for %s.", input_data.filename)
+            raise AgentError(f"PDF extraction failed: {e}")
     
     def _parse_llm_order_lines(self, input_order_lines: List[LLMExtractedOrderLine]) -> List[ExtractedOrderLine]:
         order_lines = []
