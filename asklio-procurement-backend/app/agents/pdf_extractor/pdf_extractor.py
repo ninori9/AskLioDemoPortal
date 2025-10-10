@@ -87,7 +87,6 @@ class PDFTextExtractor(AbstractPDFExtractor):
             parsed_pdf, _meta_pdf = self._ai.complete_pydantic(
                 messages=pdf_messages,
                 response_model=LLMExtractedProcurementData,
-                model="gpt-4.1-2025-04-14"
             )
             llm_pdf: LLMExtractedProcurementData = parsed_pdf
             logger.info("PDF extraction done.")
